@@ -1,8 +1,8 @@
-from flask import render_template, flash, redirect, url_for, request
-from flask_login import current_user, login_user, logout_user, login_required # NEW
+from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm
-from app.models import User, Product, CartItem
+from app.models import User, Product, CartItem, Message
 
 @app.route("/")
 @app.route("/index")
@@ -34,7 +34,7 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash("Invalid email or password", "danger")
             return redirect(url_for('login'))
-        login_user(user) # THIS officially logs them in
+        login_user(user)
         flash(f"Welcome back, {user.dota2_username}!", "success")
         return redirect(url_for("index"))
     return render_template("login.html", title="Log In", form=form)
@@ -48,11 +48,9 @@ def logout():
 @app.route("/profile")
 @login_required
 def profile():
-    # This grabs the products listed by the logged-in user
     my_listings = Product.query.filter_by(user_id=current_user.id).all()
     return render_template("profile.html", title="Profile", user=current_user, my_listings=my_listings)
 
-# UPDATE THIS ROUTE: Tag the seller when adding a product
 @app.route("/add_product", methods=["GET", "POST"])
 @login_required
 def add_product():
@@ -62,7 +60,7 @@ def add_product():
             name=form.name.data, price=form.price.data, rarity=form.rarity.data,
             status=form.status.data, quantity=form.quantity.data,
             description=form.description.data, image_url=form.image_url.data,
-            user_id=current_user.id # NEW: Tags the product to the logged-in user
+            user_id=current_user.id
         )
         db.session.add(new_product)
         db.session.commit()
@@ -70,13 +68,10 @@ def add_product():
         return redirect(url_for("index"))
     return render_template("add_product.html", title="Sell Item", form=form)
 
-
-# NEW ROUTE: The Midterm CRUD "Delete" Operation
 @app.route("/delete_product/<int:product_id>", methods=["POST"])
 @login_required
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
-    # Security check: Only the owner can delete it
     if product.user_id != current_user.id:
         flash("You cannot delete someone else's product!", "danger")
         return redirect(url_for('profile'))
@@ -86,7 +81,6 @@ def delete_product(product_id):
     flash(f"{product.name} has been removed from the marketplace.", "success")
     return redirect(url_for('profile'))
 
-# NEW ROUTE: Detailed Product View
 @app.route("/product/<int:product_id>")
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
@@ -104,7 +98,6 @@ def edit_profile():
         flash("Your changes have been saved.", "success")
         return redirect(url_for("profile"))
     elif request.method == "GET":
-        # Pre-fill the form with the user's current data
         form.dota2_username.data = current_user.dota2_username
         form.steam_id.data = current_user.steam_id
         form.email.data = current_user.email
@@ -117,7 +110,7 @@ def add_to_cart(product_id):
     
     if product.quantity <= 0:
         flash(f"Sorry, {product.name} is out of stock!", "danger")
-        return redirect(url_for('index', _anchor='market-grid')) # ADDED _anchor
+        return redirect(url_for('index', _anchor='market-grid'))
 
     cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
     
@@ -134,7 +127,7 @@ def add_to_cart(product_id):
         db.session.commit()
         flash(f"{product.name} added to your cart!", "success")
         
-    return redirect(url_for('index', _anchor='market-grid')) # ADDED _anchor
+    return redirect(url_for('index', _anchor='market-grid'))
 
 @app.route("/cart")
 @login_required
@@ -164,11 +157,10 @@ def checkout():
     total_price = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == "POST":
-        # Simulate payment processing & inventory deduction
         for item in cart_items:
             product = Product.query.get(item.product_id)
-            product.quantity -= item.quantity # Deduct from stock
-            db.session.delete(item) # Remove from cart
+            product.quantity -= item.quantity
+            db.session.delete(item)
             
         db.session.commit()
         flash(f"Payment of ₱{total_price:,.2f} successful! Aegis secured.", "success")
@@ -179,32 +171,213 @@ def checkout():
 @app.route("/messages")
 @login_required
 def messages():
-    # Grab all users EXCEPT the current user to display as "Available Chats"
-    # (In a massive app, you'd only query recent chats, but this is perfect for your prototype!)
-    other_users = User.query.filter(User.id != current_user.id).all()
+    from sqlalchemy import or_, and_
+    
+    active_messages = Message.query.filter(
+        or_(
+            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
+            and_(Message.recipient_id == current_user.id, Message.deleted_by_recipient == False)
+        )
+    ).all()
+    
+    active_partner_ids = set()
+    for msg in active_messages:
+        if msg.sender_id != current_user.id:
+            active_partner_ids.add(msg.sender_id)
+        if msg.recipient_id != current_user.id:
+            active_partner_ids.add(msg.recipient_id)
+            
+    other_users = User.query.filter(User.id.in_(active_partner_ids)).all()
+    
     return render_template("messages.html", title="Inbox", other_users=other_users)
 
-@app.route("/chat/<int:user_id>", methods=["GET", "POST"])
+# ---> HERE IS THE MISSING ROUTE! <---
+@app.route("/chat/<int:user_id>")
 @login_required
 def chat(user_id):
+    """Renders the Vue.js chat room UI."""
     chat_partner = User.query.get_or_404(user_id)
-    
-    # If the user typed a message and hit send
-    if request.method == "POST":
-        message_body = request.form.get("message")
-        if message_body:
-            msg = Message(sender_id=current_user.id, recipient_id=chat_partner.id, body=message_body)
-            db.session.add(msg)
-            db.session.commit()
-            return redirect(url_for('chat', user_id=chat_partner.id))
+    return render_template("chat.html", title=f"Chat with {chat_partner.dota2_username}", chat_partner=chat_partner)
 
-    # Fetch the back-and-forth history between these two specific users
+@app.route("/api/chat/<int:user_id>")
+@login_required
+def api_get_chat(user_id):
     from sqlalchemy import or_, and_
     chat_history = Message.query.filter(
         or_(
-            and_(Message.sender_id == current_user.id, Message.recipient_id == chat_partner.id),
-            and_(Message.sender_id == chat_partner.id, Message.recipient_id == current_user.id)
+            and_(Message.sender_id == current_user.id, Message.recipient_id == user_id, Message.deleted_by_sender == False),
+            and_(Message.sender_id == user_id, Message.recipient_id == current_user.id, Message.deleted_by_recipient == False)
         )
     ).order_by(Message.timestamp.asc()).all()
+
+    messages_data = []
+    for msg in chat_history:
+        messages_data.append({
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "body": msg.body,
+            "timestamp": msg.timestamp.strftime('%H:%M')
+        })
+    return jsonify(messages_data)
+
+@app.route("/api/products")
+def api_products():
+    products = Product.query.all()
+    product_list = []
+    for p in products:
+        product_list.append({
+            "id": p.id, "name": p.name, "price": p.price,
+            "rarity": p.rarity, "status": p.status, 
+            "quantity": p.quantity, "image_url": p.image_url
+        })
+    return jsonify(product_list)
+
+@app.route("/api/add_to_cart/<int:product_id>", methods=["POST"])
+@login_required
+def api_add_to_cart(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.quantity <= 0:
+        return jsonify({"status": "error", "message": "Out of stock!"})
+
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if cart_item:
+        if cart_item.quantity < product.quantity:
+            cart_item.quantity += 1
+            db.session.commit()
+            return jsonify({"status": "success", "message": f"Added another {product.name} to cart!"})
+        else:
+            return jsonify({"status": "error", "message": "Max stock reached."})
+    else:
+        new_cart_item = CartItem(user_id=current_user.id, product_id=product_id)
+        db.session.add(new_cart_item)
+        db.session.commit()
+        return jsonify({"status": "success", "message": f"{product.name} added to cart!"})
     
-    return render_template("chat.html", title=f"Chat with {chat_partner.dota2_username}", chat_partner=chat_partner, chat_history=chat_history)
+@app.route("/api/cart")
+@login_required
+def api_cart():
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    cart_list = []
+    for item in cart_items:
+        cart_list.append({
+            "id": item.id,
+            "quantity": item.quantity,
+            "product": {
+                "id": item.product.id,
+                "name": item.product.name,
+                "price": item.product.price,
+                "rarity": item.product.rarity,
+                "image_url": item.product.image_url
+            }
+        })
+    return jsonify(cart_list)
+
+@app.route("/api/remove_from_cart/<int:cart_item_id>", methods=["POST"])
+@login_required
+def api_remove_from_cart(cart_item_id):
+    cart_item = CartItem.query.get_or_404(cart_item_id)
+    if cart_item.user_id == current_user.id:
+        db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Item removed from cart."})
+    return jsonify({"status": "error", "message": "Unauthorized access."}), 403
+
+@app.route("/api/chat/<int:user_id>/send", methods=["POST"])
+@login_required
+def api_send_message(user_id):
+    data = request.get_json()
+    message_body = data.get("message")
+    
+    if message_body:
+        msg = Message(sender_id=current_user.id, recipient_id=user_id, body=message_body)
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({"status": "success"})
+        
+    return jsonify({"status": "error", "message": "Cannot send empty message"})
+
+@app.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
+@login_required
+def edit_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    if product.user_id != current_user.id:
+        flash("You cannot edit someone else's product!", "danger")
+        return redirect(url_for('profile'))
+
+    form = ProductForm()
+    
+    if form.validate_on_submit():
+        product.name = form.name.data
+        product.price = form.price.data
+        product.rarity = form.rarity.data
+        product.status = form.status.data
+        product.quantity = form.quantity.data
+        product.description = form.description.data
+        product.image_url = form.image_url.data
+        
+        db.session.commit()
+        flash(f"{product.name} has been updated successfully!", "success")
+        return redirect(url_for('profile'))
+        
+    elif request.method == "GET":
+        form.name.data = product.name
+        form.price.data = product.price
+        form.rarity.data = product.rarity
+        form.status.data = product.status
+        form.quantity.data = product.quantity
+        form.description.data = product.description
+        form.image_url.data = product.image_url
+
+    return render_template("edit_product.html", title="Edit Item", form=form, product=product)
+
+@app.route("/api/chat/delete_conversation/<int:partner_id>", methods=["POST"])
+@login_required
+def api_delete_conversation(partner_id):
+    from sqlalchemy import or_, and_
+    chat_history = Message.query.filter(
+        or_(
+            and_(Message.sender_id == current_user.id, Message.recipient_id == partner_id),
+            and_(Message.sender_id == partner_id, Message.recipient_id == current_user.id)
+        )
+    ).all()
+    
+    for msg in chat_history:
+        if msg.sender_id == current_user.id:
+            msg.deleted_by_sender = True
+        if msg.recipient_id == current_user.id:
+            msg.deleted_by_recipient = True
+            
+        if msg.deleted_by_sender and msg.deleted_by_recipient:
+            db.session.delete(msg)
+            
+    db.session.commit()
+    return jsonify({"status": "success", "message": "Conversation cleared."})
+
+@app.route("/api/update_cart/<int:cart_item_id>", methods=["POST"])
+@login_required
+def api_update_cart(cart_item_id):
+    data = request.get_json()
+    action = data.get("action")
+    cart_item = CartItem.query.get_or_404(cart_item_id)
+
+    if cart_item.user_id != current_user.id:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    if action == "increase":
+        if cart_item.quantity < cart_item.product.quantity:
+            cart_item.quantity += 1
+            db.session.commit()
+            return jsonify({"status": "success", "new_quantity": cart_item.quantity})
+        else:
+            return jsonify({"status": "error", "message": "Maximum stock reached."})
+            
+    elif action == "decrease":
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            db.session.commit()
+            return jsonify({"status": "success", "new_quantity": cart_item.quantity})
+        else:
+            return jsonify({"status": "error", "message": "Minimum quantity is 1. Use the X button to remove."})
+            
+    return jsonify({"status": "error", "message": "Invalid action"})

@@ -61,7 +61,6 @@ class CartItem(db.Model):
     user = db.relationship('User', backref=db.backref('cart_items', lazy=True))
     product = db.relationship('Product')
 
-    # Put this at the very bottom of models.py
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
@@ -69,7 +68,10 @@ class Message(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     body = db.Column(db.String(500), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # NEW: Soft-Delete Flags
+    deleted_by_sender = db.Column(db.Boolean, default=False)
+    deleted_by_recipient = db.Column(db.Boolean, default=False)
 
-    # These relationships connect the message to the two users involved
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')

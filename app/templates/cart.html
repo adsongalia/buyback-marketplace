@@ -1,52 +1,142 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <h3 class="fw-bold mb-4 text-white">YOUR CART</h3>
+<div class="row justify-content-center mt-4 mb-5" id="vue-cart">
+    <div class="col-lg-8">
         
-        {% if cart_items %}
-            <div class="card p-4 shadow mb-4">
-                {% for item in cart_items %}
-                <div class="row mb-3 align-items-center border-bottom border-secondary pb-3">
-                    <div class="col-2">
-                        {% if item.product.image_url %}
-<img src="{{ item.product.image_url }}" class="img-fluid rounded border shadow-sm" style="border-color: var(--border-color) !important; min-height: 60px; object-fit: cover;" alt="Product" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect fill=\'%23151b2b\' width=\'100\' height=\'100\'/%3E%3Ctext fill=\'%233b4b6b\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'12\' font-weight=\'bold\'%3EITEM%3C/text%3E%3C/svg%3E';">                        {% else %}
-                            <div class="bg-dark rounded d-flex justify-content-center align-items-center" style="height: 60px;"><small>No Img</small></div>
-                        {% endif %}
-                    </div>
-                    <div class="col-5">
-                        <h5 class="mb-0 text-white">{{ item.product.name }}</h5>
-                        <small class="text-secondary">{{ item.product.rarity }}</small>
-                    </div>
-                    <div class="col-2">
-                        {% if item.product.image_url %}
-                            <img src="{{ item.product.image_url }}" class="img-fluid rounded border border-secondary shadow-sm" alt="Product" onerror="this.onerror=null; this.src='https://placehold.co/100x100/020617/38bdf8?text=Item';">
-                        {% else %}
-                            <div class="bg-dark rounded d-flex justify-content-center align-items-center border border-secondary shadow-sm" style="height: 60px;"><small class="text-secondary">No Img</small></div>
-                        {% endif %}
-                    </div>
-                    <div class="col-2 text-end text-primary fw-bold">
-                        ₱{{ "{:,.2f}".format(item.product.price * item.quantity) }}
-                    </div>
-                    <div class="col-1 text-end">
-                        <a href="{{ url_for('remove_from_cart', cart_item_id=item.id) }}" class="btn btn-sm btn-danger">X</a>
-                    </div>
-                </div>
-                {% endfor %}
+        <div v-if="alertMessage" 
+         :class="['alert', 'custom-alert', alertType === 'success' ? 'alert-success-custom' : 'alert-danger-custom', 'shadow-lg', 'd-flex', 'align-items-center']" 
+         style="position: fixed; bottom: 30px; right: 30px; z-index: 1050; padding: 15px 25px; border-radius: 12px; font-weight: 600;">
+        <i :class="['fas', alertType === 'success' ? 'fa-check-circle text-success' : 'fa-exclamation-triangle text-danger', 'fs-4', 'me-3']"></i>
+        {% raw %}{{ alertMessage }}{% endraw %}
+    </div>
+
+        <div class="d-flex align-items-center mb-4">
+            <h2 class="text-white fw-bolder m-0 text-uppercase" style="letter-spacing: 1px;">
+                <i class="fas fa-shopping-cart text-cyan me-3"></i> YOUR STASH
+            </h2>
+        </div>
+        
+        <div v-if="loading" class="text-center p-5">
+            <h4 class="text-muted">Loading your treasures...</h4>
+        </div>
+
+        <div v-else-if="cartItems.length > 0" class="card p-0 shadow-lg border-0 overflow-hidden" style="background-color: var(--bg-card);">
+            
+            <div v-for="item in cartItems" :key="item.id" class="row g-0 align-items-center p-4 border-bottom" style="border-color: var(--border-color) !important; transition: background 0.2s;">
                 
-                <div class="row mt-4">
-                    <div class="col text-end">
-                        <h4 class="text-white">Total: <span class="text-primary fw-bold">₱{{ "{:,.2f}".format(total_price) }}</span></h4>
-                        <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg mt-3 fw-bold w-50">Proceed to Checkout</a>
+                <div class="col-md-2 text-center">
+                    <img v-if="item.product.image_url" :src="item.product.image_url" class="img-fluid rounded border shadow-sm" style="border-color: var(--border-color) !important; min-height: 80px; object-fit: cover;" :alt="item.product.name" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect fill=\'%230b101e\' width=\'100\' height=\'100\'/%3E%3Ctext fill=\'%233b4b6b\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'12\' font-weight=\'bold\'%3EITEM%3C/text%3E%3C/svg%3E';">
+                </div>
+                
+                <div class="col-md-4 ps-md-4 mt-3 mt-md-0 text-center text-md-start">
+                    <h5 class="mb-1 text-white fw-bold">{% raw %}{{ item.product.name }}{% endraw %}</h5>
+                    <span class="badge" style="background-color: #3b4b6b; color: white;">{% raw %}{{ item.product.rarity }}{% endraw %}</span>
+                </div>
+                
+                <div class="col-md-2 mt-3 mt-md-0 d-flex justify-content-center align-items-center">
+                    <button @click="updateQuantity(item.id, 'decrease')" class="btn btn-sm text-cyan fw-bold fs-5 px-2" :disabled="item.quantity <= 1">-</button>
+                    <span class="mx-3 text-white fw-bold fs-5">{% raw %}{{ item.quantity }}{% endraw %}</span>
+                    <button @click="updateQuantity(item.id, 'increase')" class="btn btn-sm text-cyan fw-bold fs-5 px-2">+</button>
+                </div>
+                
+                <div class="col-md-3 text-center text-md-end mt-3 mt-md-0 text-cyan fw-bold fs-5">
+                    ₱{% raw %}{{ (item.product.price * item.quantity).toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}
+                </div>
+                
+                <div class="col-md-1 text-end mt-3 mt-md-0 d-flex justify-content-center justify-content-md-end align-items-center">
+                    <button @click="removeFromCart(item.id)" class="btn btn-sm text-danger border-0" title="Remove Item" style="opacity: 0.6; transition: all 0.2s ease; font-size: 1.2rem;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4" style="background-color: var(--bg-main);">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        <h4 class="text-muted m-0 text-uppercase fw-bold">Total Due: <span class="text-success fs-3 ms-2 fw-bolder">₱{% raw %}{{ totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}</span></h4>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg fw-bold shadow-lg px-5 py-3 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-bolt me-2"></i> Proceed to Checkout</a>
                     </div>
                 </div>
             </div>
-        {% else %}
-            <div class="card p-5 text-center shadow">
-                <h4 class="text-secondary mb-4">Your stash is currently empty.</h4>
-                <a href="{{ url_for('index') }}" class="btn btn-primary w-25 mx-auto">Browse Market</a>
-            </div>
-        {% endif %}
+        </div>
+
+        <div v-else class="card p-5 text-center shadow-lg border-0" style="background-color: var(--bg-card);">
+            <div class="mb-4" style="font-size: 5rem; color: #3b4b6b;">🛒</div>
+            <h3 class="text-white fw-bold mb-3">Your stash is completely empty.</h3>
+            
+            <p class="mb-4 fs-5" style="color: #94a3b8;">Time to farm some gold and visit the marketplace.</p>
+            
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-5 fw-bold mx-auto shadow-sm">Browse Market</a>
+        </div>
     </div>
 </div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const cartItems = ref([]);
+            const loading = ref(true);
+            const alertMessage = ref('');
+            const alertType = ref('success');
+
+            const fetchCart = async () => {
+                try {
+                    const response = await fetch('/api/cart');
+                    if (response.redirected) { window.location.href = response.url; return; }
+                    cartItems.value = await response.json();
+                } catch (error) { console.error("Failed to load cart:", error); } 
+                finally { loading.value = false; }
+            };
+
+            const removeFromCart = async (cartItemId) => {
+                try {
+                    const response = await fetch('/api/remove_from_cart/' + cartItemId, { method: 'POST' });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        cartItems.value = cartItems.value.filter(item => item.id !== cartItemId);
+                        showAlert(data.message, data.status);
+                    }
+                } catch (error) { console.error("Error removing item:", error); }
+            };
+
+            // NEW: Method to update quantity
+            const updateQuantity = async (cartItemId, action) => {
+                try {
+                    const response = await fetch('/api/update_cart/' + cartItemId, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: action })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        // Find the item and update its quantity locally
+                        const item = cartItems.value.find(i => i.id === cartItemId);
+                        if (item) item.quantity = data.new_quantity;
+                    } else {
+                        showAlert(data.message, 'danger');
+                    }
+                } catch (error) { console.error("Error updating quantity:", error); }
+            };
+
+            const showAlert = (msg, type) => {
+                alertMessage.value = msg;
+                alertType.value = type;
+                setTimeout(() => { alertMessage.value = ''; }, 3000);
+            };
+
+            const totalPrice = computed(() => {
+                return cartItems.value.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+            });
+
+            onMounted(() => { fetchCart(); });
+
+            return { cartItems, loading, totalPrice, removeFromCart, updateQuantity, alertMessage, alertType };
+        }
+    }).mount('#vue-cart');
+</script>
 {% endblock %}

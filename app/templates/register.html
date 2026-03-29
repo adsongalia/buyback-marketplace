@@ -1,19 +1,66 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card p-4 shadow">
-            <h2 class="mb-4 text-center fw-bold text-primary">Sign Up</h2>
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-7 col-lg-5">
+        <div class="text-center mb-4">
+            <h2 class="fw-bolder text-white text-uppercase" style="letter-spacing: 2px;">Join BUY<span class="text-cyan">BACK</span></h2>
+            <p style="color: #94a3b8;">Create your account to start trading Dota 2 treasures.</p>
+        </div>
+        
+        <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
             <form method="post" novalidate>
                 {{ form.hidden_tag() }}
-                <div class="mb-3">{{ form.email.label(class="form-label") }} {{ form.email() }}</div>
-                <div class="mb-3">{{ form.dota2_username.label(class="form-label") }} {{ form.dota2_username() }}</div>
-                <div class="mb-3">{{ form.steam_id.label(class="form-label") }} {{ form.steam_id() }}</div>
-                <div class="mb-3">{{ form.password.label(class="form-label") }} {{ form.password() }}</div>
-                <div class="mb-4">{{ form.confirm_password.label(class="form-label") }} {{ form.confirm_password() }}</div>
-                {{ form.submit() }}
+                
+                <div class="mb-4">
+                    {{ form.email.label(class="form-label text-cyan") }} 
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;"><i class="fas fa-envelope"></i></span>
+                        {{ form.email(class="form-control", placeholder="name@example.com") }}
+                    </div>
+                    {% for error in form.email.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    {{ form.dota2_username.label(class="form-label text-cyan") }} 
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;"><i class="fas fa-gamepad"></i></span>
+                        {{ form.dota2_username(class="form-control", placeholder="e.g. Miracle-") }}
+                    </div>
+                    {% for error in form.dota2_username.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    {{ form.steam_id.label(class="form-label text-cyan") }} 
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;"><i class="fab fa-steam"></i></span>
+                        {{ form.steam_id(class="form-control", placeholder="17-digit Steam ID") }}
+                    </div>
+                    {% for error in form.steam_id.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    {{ form.password.label(class="form-label text-cyan") }} 
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;"><i class="fas fa-lock"></i></span>
+                        {{ form.password(class="form-control", placeholder="••••••••") }}
+                    </div>
+                    {% for error in form.password.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-5">
+                    {{ form.confirm_password.label(class="form-label text-cyan") }} 
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;"><i class="fas fa-check-circle"></i></span>
+                        {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
+                    </div>
+                    {% for error in form.confirm_password.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm">Create Account</button>
             </form>
-<p class="mt-4 text-center" style="color: #94a3b8;">Already have an account? <a href="{{ url_for('login') }}" class="text-cyan text-decoration-none fw-bold">Log in</a></p>        </div>
+            
+            <p class="mt-4 mb-0 text-center" style="color: #94a3b8;">Already have an account? <a href="{{ url_for('login') }}" class="text-cyan text-decoration-none fw-bold">Log in</a></p>
+        </div>
     </div>
 </div>
 {% endblock %}

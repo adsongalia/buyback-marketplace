@@ -2,15 +2,23 @@
 {% block content %}
 <div class="row justify-content-center mt-4 mb-5">
     <div class="col-md-8 col-lg-6">
-        <h3 class="mb-4 text-cyan fw-bold text-center text-uppercase" style="letter-spacing: 2px;"><i class="fas fa-gavel me-2"></i> List an Item</h3>
+        <div class="d-flex align-items-center justify-content-center mb-4">
+            <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary border-0 me-3" style="color: #94a3b8;"><i class="fas fa-arrow-left"></i></a>
+            <h3 class="text-cyan fw-bold text-uppercase m-0" style="letter-spacing: 2px;"><i class="fas fa-pen-nib me-2"></i> Edit Listing</h3>
+        </div>
         
         <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
+            <div class="mb-4 text-center">
+                <span class="badge bg-primary text-uppercase mb-2">Editing</span>
+                <h4 class="text-white fw-bold">{{ product.name }}</h4>
+            </div>
+
             <form method="post" novalidate>
                 {{ form.hidden_tag() }}
                 
                 <div class="mb-4">
                     {{ form.name.label(class="form-label text-cyan") }} 
-                    {{ form.name(class="form-control", placeholder="e.g. Manifold Paradox") }}
+                    {{ form.name(class="form-control") }}
                     {% for error in form.name.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
@@ -33,8 +41,7 @@
 
                 <div class="mb-4">
                     {{ form.image_url.label(class="form-label text-cyan") }} 
-                    {{ form.image_url(class="form-control", placeholder="https://steamcommunity.com/...") }}
-                    <small class="text-muted mt-1 d-block">Leave blank if you don't have an image.</small>
+                    {{ form.image_url(class="form-control") }}
                     {% for error in form.image_url.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
@@ -52,12 +59,12 @@
                 
                 <div class="mb-4">
                     {{ form.description.label(class="form-label text-cyan") }} 
-                    {{ form.description(class="form-control", rows="4", placeholder="Describe the item's history or special gems...") }}
+                    {{ form.description(class="form-control", rows="4") }}
                 </div>
                 
                 <hr style="border-color: var(--border-color);" class="mb-4">
                 
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-plus-circle me-2"></i> Add Listing</button>
+                <button type="submit" class="btn btn-warning w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-save me-2"></i> Update Listing</button>
             </form>
         </div>
     </div>
