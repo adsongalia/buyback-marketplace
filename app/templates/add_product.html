@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h3 class="mb-3 fw-bold">YOUR PRODUCT</h3>
+        <div class="card p-4 shadow">
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label text-secondary") }} 
+                    {{ form.name() }}
+                    {% for error in form.name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.price.label(class="form-label text-secondary") }} 
+                    {{ form.price() }}
+                    {% for error in form.price.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.image_url.label(class="form-label text-secondary") }} 
+                    {{ form.image_url() }}
+                    {% for error in form.image_url.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.rarity.label(class="form-label text-secondary") }} 
+                    {{ form.rarity() }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.status.label(class="form-label text-secondary") }} 
+                    {{ form.status() }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.quantity.label(class="form-label text-secondary") }} 
+                    {{ form.quantity() }}
+                    {% for error in form.quantity.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                
+                <div class="mb-4">
+                    {{ form.description.label(class="form-label text-secondary") }} 
+                    {{ form.description() }}
+                </div>
+                
+                {{ form.submit() }}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

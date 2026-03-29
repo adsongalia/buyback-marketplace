@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-3 mb-5">
+    <div class="col-lg-10">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary mb-4 border-0" style="color: #94a3b8;"><i class="fas fa-arrow-left me-2"></i> ← Back to Marketplace</a>
+        
+        <div class="card p-0 overflow-hidden shadow-lg border-0" style="background-color: var(--bg-card);">
+            <div class="row g-0">
+                <div class="col-md-5 d-flex align-items-center justify-content-center" style="min-height: 400px; background-color: var(--bg-main); border-right: 1px solid var(--border-color);">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="img-fluid w-100 h-100" style="object-fit: cover;" alt="{{ product.name }}" onerror="this.style.display='none'; document.getElementById('fallback-{{ product.id }}').style.display='flex';">
+                        <div id="fallback-{{ product.id }}" class="text-center w-100 h-100 align-items-center justify-content-center flex-column" style="display: none; background-color: var(--bg-main);">
+                            <div style="font-size: 5rem; color: #3b4b6b;">📦</div>
+                            <div class="fw-bold mt-2" style="color: #94a3b8;">NO IMAGE</div>
+                        </div>
+                    {% else %}
+                        <div class="text-center w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="background-color: var(--bg-main);">
+                            <div style="font-size: 5rem; color: #3b4b6b;">📦</div>
+                            <div class="fw-bold mt-2" style="color: #94a3b8;">NO IMAGE</div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-7 p-5 d-flex flex-column">
+                    <h2 class="text-white fw-bolder mb-2">{{ product.name }}</h2>
+                    <h3 class="fw-bold mb-4" style="color: var(--accent-cyan);">₱{{ "{:,.2f}".format(product.price) }}</h3>
+                    
+                    <div class="mb-4 gap-2 d-flex flex-wrap">
+                        {% if product.rarity == 'Arcana' %}
+                            <span class="badge fs-6 py-2 px-3" style="background-color: #84cc16; color: #1a2e05;">Arcana</span>
+                        {% elif product.rarity == 'Immortal' %}
+                            <span class="badge fs-6 py-2 px-3" style="background-color: #fbbf24; color: #451a03;">Immortal</span>
+                        {% else %}
+                            <span class="badge bg-secondary text-white fs-6 py-2 px-3">{{ product.rarity }}</span>
+                        {% endif %}
+                        <span class="badge fs-6 py-2 px-3" style="background-color: #0284c7; color: white;">{{ product.status }}</span>
+                    </div>
+                    
+                    <h5 class="text-white mb-3">Qty in Stock: <span style="color: var(--accent-cyan);">{{ product.quantity }}</span></h5>
+                    
+                    <h5 class="text-white mb-4">Delivery Date: <span style="color: #94a3b8; font-weight: 400;">Within 24 Hours</span></h5>
+                    
+                    <hr style="border-color: var(--border-color);">
+                    
+                    <div class="d-flex justify-content-between align-items-end mb-2 mt-2">
+                        <h4 class="text-white fw-bold m-0">Product Description:</h4>
+                        <small style="color: #94a3b8;">Listed Recently</small>
+                    </div>
+                    <p style="color: #cbd5e1; line-height: 1.7; font-size: 1.05rem;">{{ product.description or "No description provided for this item." }}</p>
+                    
+                    <div class="mt-auto pt-4 d-flex align-items-center">
+                        <div class="rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: var(--accent-cyan); font-size: 1.5rem; font-weight: bold; border: 2px solid var(--accent-cyan);">
+                            {{ product.seller.dota2_username[0]|upper if product.seller else "B" }}
+                        </div>
+                        <div>
+                            <h5 class="text-white mb-1 fw-bold">{{ product.seller.dota2_username if product.seller else "BUYBACK Official" }}</h5>
+                            <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">★★★★★ <span style="color: #94a3b8; margin-left: 5px;">Trusted Seller</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-0 border-top" style="border-color: var(--border-color) !important; background-color: var(--bg-main);">
+                
+                <div class="col-4 p-3 border-end" style="border-color: var(--border-color) !important;">
+                    {% if product.user_id and product.user_id != current_user.id %}
+                        <a href="{{ url_for('chat', user_id=product.user_id) }}" class="btn btn-outline-secondary w-100 py-3 fw-bold border-0" style="color: #cbd5e1;"><i class="fas fa-comment-dots me-2"></i> Message Seller</a>
+                    {% elif product.user_id == current_user.id %}
+                        <button class="btn btn-outline-secondary w-100 py-3 fw-bold border-0 disabled" style="color: #64748b;"><i class="fas fa-comment-dots me-2"></i> Your Item</button>
+                    {% else %}
+                        <button class="btn btn-outline-secondary w-100 py-3 fw-bold border-0 disabled" style="color: #64748b;"><i class="fas fa-comment-dots me-2"></i> System Item</button>
+                    {% endif %}
+                </div>
+                
+                <div class="col-4 p-3 border-end" style="border-color: var(--border-color) !important;">
+                    <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-outline-primary w-100 py-3 fw-bold border-0"><i class="fas fa-cart-plus me-2"></i> Add To Cart</a>
+                </div>
+                
+                <div class="col-4 p-3">
+                    <a href="{{ url_for('checkout') }}" class="btn btn-primary w-100 py-3 fw-bold shadow"><i class="fas fa-bolt me-2"></i> Buy Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-2 mb-5">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-3 p-3 rounded shadow-sm" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+            <a href="{{ url_for('messages') }}" class="btn btn-outline-secondary border-0 me-3" style="color: #94a3b8;">← Back</a>
+            <div class="rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; background-color: var(--border-color); color: #00e5ff; font-weight: bold;">
+                {{ chat_partner.dota2_username[0]|upper }}
+            </div>
+            <h4 class="text-white m-0 fw-bold">{{ chat_partner.dota2_username }}</h4>
+        </div>
+
+        <div class="card border-0 shadow-lg mb-3" style="background-color: #0b101e; height: 50vh; overflow-y: auto; border: 1px solid var(--border-color) !important;">
+            <div class="p-4 d-flex flex-column gap-3">
+                {% for msg in chat_history %}
+                    {% if msg.sender_id == current_user.id %}
+                        <div class="align-self-end p-3 rounded" style="background-color: #0284c7; color: white; max-width: 75%;">
+                            {{ msg.body }}
+                            <div class="text-end mt-1" style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                        </div>
+                    {% else %}
+                        <div class="align-self-start p-3 rounded" style="background-color: var(--bg-card); color: #e2e8f0; max-width: 75%; border: 1px solid var(--border-color);">
+                            {{ msg.body }}
+                            <div class="text-start mt-1" style="font-size: 0.75rem; color: #64748b;">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if not chat_history %}
+                    <div class="text-center text-muted my-auto">Start the conversation with {{ chat_partner.dota2_username }}!</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="POST">
+            <div class="d-flex gap-2">
+                <input type="text" name="message" class="form-control text-white border-0 py-3 px-4 shadow-sm" style="background-color: var(--bg-card);" placeholder="Type a message..." required autocomplete="off">
+                <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm">SEND</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var chatWindow = document.querySelector('.card.border-0.shadow-lg.mb-3');
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+</script>
+{% endblock %}

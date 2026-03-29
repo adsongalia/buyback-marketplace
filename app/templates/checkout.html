@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-7 col-lg-6">
+        <h3 class="fw-bold mb-4 text-white text-center text-md-start">PAYMENT METHODS</h3>
+        
+        <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
+            <form method="POST" action="{{ url_for('checkout') }}">
+                
+                <div id="payment-options-container">
+                    <label class="form-check-label w-100 mb-3 cursor-pointer">
+                        <div class="d-flex align-items-center p-3 rounded" style="background-color: var(--bg-main); border: 1px solid var(--border-color);">
+                            <input class="form-check-input ms-2 me-4 mt-0" type="radio" name="payment_method" value="gcash" checked style="transform: scale(1.2);">
+                            <span class="text-white fw-bold fs-5 flex-grow-1">GCash</span>
+                            <span class="text-cyan fw-semibold">09** *** **32</span>
+                        </div>
+                    </label>
+
+                    <label class="form-check-label w-100 mb-3 cursor-pointer">
+                        <div class="d-flex align-items-center p-3 rounded" style="background-color: var(--bg-main); border: 1px solid var(--border-color);">
+                            <input class="form-check-input ms-2 me-4 mt-0" type="radio" name="payment_method" value="card_default" style="transform: scale(1.2);">
+                            <span class="text-white fw-bold fs-5">Credit / Debit Card <span class="text-muted fs-6 ms-2">****4484</span></span>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="p-3 rounded mb-4" style="background-color: #020617; border: 1px dashed #3b4b6b;">
+                    <div class="text-cyan fw-bold" data-bs-toggle="collapse" data-bs-target="#newCardForm" style="cursor: pointer;">
+                        + Add New Card / Credit Card
+                    </div>
+
+                    <div class="collapse mt-3" id="newCardForm">
+                        <div class="card card-body p-4 shadow-sm" style="background-color: var(--bg-main); border: 1px solid #3b4b6b;">
+                            <input type="text" class="form-control mb-3 text-white" placeholder="Cardholder Name" autocomplete="off">
+                            <input type="text" id="newCardInput" class="form-control mb-3 text-white" placeholder="Card Number (16 digits)" autocomplete="off">
+                            <div class="d-flex gap-3 mb-4">
+                                <input type="text" class="form-control text-white" placeholder="MM/YY" autocomplete="off">
+                                <input type="text" class="form-control text-white" placeholder="CVC" autocomplete="off">
+                            </div>
+                            <button type="button" class="btn btn-primary w-100 fw-bold" onclick="addNewCardOption()">Save & Select New Card</button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" style="border-color: #3b4b6b;">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded" style="background-color: var(--bg-main);">
+                    <h5 class="mb-0 fw-bold text-uppercase" style="color: #94a3b8;">Total Due</h5>
+                    <h3 class="text-success fw-bolder mb-0">₱{{ "{:,.2f}".format(total_price) }}</h3>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-3 text-uppercase tracking-wider shadow">Place Order</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addNewCardOption() {
+        let cardNum = document.getElementById('newCardInput').value;
+        let lastFour = cardNum.length >= 4 ? cardNum.slice(-4) : "9999"; 
+        
+        let newOptionHTML = `
+            <label class="form-check-label w-100 mb-3 cursor-pointer">
+                <div class="d-flex align-items-center p-3 rounded" style="background-color: var(--bg-main); border: 1px solid var(--accent-cyan);">
+                    <input class="form-check-input ms-2 me-4 mt-0" type="radio" name="payment_method" value="new_card_${lastFour}" checked style="transform: scale(1.2);">
+                    <span class="text-white fw-bold fs-5">New Card <span class="text-muted fs-6 ms-2">****${lastFour}</span></span>
+                    <span class="badge bg-success ms-auto">Recently Added</span>
+                </div>
+            </label>
+        `;
+        
+        // Append it to our list
+        document.getElementById('payment-options-container').insertAdjacentHTML('beforeend', newOptionHTML);
+        
+        // Hide the form using Bootstrap's JS API
+        var collapseElement = document.getElementById('newCardForm');
+        var bsCollapse = bootstrap.Collapse.getInstance(collapseElement) || new bootstrap.Collapse(collapseElement);
+        bsCollapse.hide();
+        
+        // Clear the input
+        document.getElementById('newCardInput').value = '';
+    }
+</script>
+{% endblock %}

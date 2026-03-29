@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} - BUYBACK</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Premium Dota 2 Aesthetic */
+        :root {
+            --bg-main: #0b101e;
+            --bg-card: #151b2b;
+            --border-color: #2a344a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #00e5ff;
+            --accent-gold: #fbbf24;
+            --btn-hover: #00b3cc;
+        }
+
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* Navbar */
+        .navbar { background-color: #060913 !important; border-bottom: 1px solid var(--border-color); padding: 1rem 0; }
+        .navbar-brand { font-weight: 900; color: var(--text-main) !important; letter-spacing: 2px; }
+        .navbar-brand span { color: var(--accent-cyan); }
+        
+        /* Cards */
+        .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; transition: all 0.3s ease; }
+        .card-hover:hover { border-color: var(--accent-cyan); box-shadow: 0 8px 25px rgba(0, 229, 255, 0.15); transform: translateY(-5px); }
+        
+        /* FORMS & INPUTS - High Visibility */
+        .form-control, .form-select { 
+            background-color: rgba(11, 16, 30, 0.8) !important; 
+            border: 1px solid #3b4b6b !important; 
+            color: #ffffff !important; 
+            border-radius: 8px; 
+            padding: 12px 15px;
+        }
+        .form-control:focus, .form-select:focus { 
+            border-color: var(--accent-cyan) !important; 
+            box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2) !important; 
+            outline: none;
+        }
+        .form-control::placeholder { color: #64748b !important; opacity: 1; }
+        .form-label { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Buttons */
+        .btn { border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; transition: all 0.2s; padding: 10px 20px; text-transform: uppercase; font-size: 0.85rem;}
+        .btn-primary { background-color: var(--accent-cyan); border: none; color: #000; }
+        .btn-primary:hover { background-color: var(--btn-hover); color: #000; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
+        .btn-outline-primary { border: 1px solid var(--accent-cyan); color: var(--accent-cyan); }
+        .btn-outline-primary:hover { background-color: var(--accent-cyan); color: #000; }
+        .btn-success { background-color: #10b981; border: none; color: white; }
+        .btn-warning { background-color: var(--accent-gold); color: #000 !important; border: none; }
+        .btn-warning:hover { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+        
+        /* Custom Alerts */
+        .custom-alert { background-color: #020617; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 8px; }
+        .alert-success-custom { border-left: 4px solid #10b981; }
+        .alert-danger-custom { border-left: 4px solid #ef4444; }
+        .alert-warning-custom { border-left: 4px solid var(--accent-gold); }
+        .alert-info-custom { border-left: 4px solid var(--accent-cyan); }
+        
+        /* Typography */
+        .text-gold { color: var(--accent-gold) !important; }
+        .text-cyan { color: var(--accent-cyan) !important; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand fs-4 m-0" href="{{ url_for('index') }}">BUY<span>BACK</span></a>
+            
+            <div class="d-flex align-items-center gap-3">
+                {% if current_user.is_authenticated %}
+                    <span class="text-secondary d-none d-md-block">Welcome, <strong class="text-gold">{{ current_user.dota2_username }}</strong></span>
+                    
+                    <a href="{{ url_for('messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold" style="background-color: var(--accent-cyan); border: none;">💬 Inbox</a>
+                    
+                    <a href="{{ url_for('cart') }}" class="btn btn-warning btn-sm px-3 shadow-sm">🛒 Cart</a>
+                    <a href="{{ url_for('add_product') }}" class="btn btn-success btn-sm px-3">+ Sell Item</a>
+                    <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary btn-sm px-3 text-light">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm px-3">Log Out</a>
+                {% else %}
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-sm px-3 text-light">Sign Up</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm px-4">Log In</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                {% for category, message in messages %}
+                    {% set custom_class = 'alert-success-custom' if category == 'success' else 'alert-danger-custom' if category == 'danger' else 'alert-warning-custom' if category == 'warning' else 'alert-info-custom' %}
+                    <div class="alert custom-alert {{ custom_class }} shadow-sm d-flex align-items-center" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

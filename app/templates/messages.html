@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-3 mb-5">
+    <div class="col-lg-8">
+        <h2 class="text-white fw-bolder mb-4 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-inbox text-cyan me-2"></i> YOUR INBOX</h2>
+        <div class="card border-0 shadow-lg" style="background-color: var(--bg-card); overflow: hidden;">
+            {% for u in other_users %}
+            <a href="{{ url_for('chat', user_id=u.id) }}" class="text-decoration-none">
+                <div class="d-flex p-4 border-bottom align-items-center card-hover" style="border-color: var(--border-color) !important; transition: background 0.2s;">
+                    <div class="rounded-circle d-flex justify-content-center align-items-center me-4 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: #00e5ff; font-size: 1.5rem; font-weight: bold;">
+                        {{ u.dota2_username[0]|upper }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h5 class="text-white fw-bold m-0">{{ u.dota2_username }}</h5>
+                            <span class="badge bg-primary">Start Chatting</span>
+                        </div>
+                        <p class="m-0" style="color: #94a3b8;">Click to view message history...</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+            {% if not other_users %}
+                <div class="p-5 text-center text-muted">No other users exist on the marketplace yet!</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

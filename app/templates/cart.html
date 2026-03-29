@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-4 text-white">YOUR CART</h3>
+        
+        {% if cart_items %}
+            <div class="card p-4 shadow mb-4">
+                {% for item in cart_items %}
+                <div class="row mb-3 align-items-center border-bottom border-secondary pb-3">
+                    <div class="col-2">
+                        {% if item.product.image_url %}
+<img src="{{ item.product.image_url }}" class="img-fluid rounded border shadow-sm" style="border-color: var(--border-color) !important; min-height: 60px; object-fit: cover;" alt="Product" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect fill=\'%23151b2b\' width=\'100\' height=\'100\'/%3E%3Ctext fill=\'%233b4b6b\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'12\' font-weight=\'bold\'%3EITEM%3C/text%3E%3C/svg%3E';">                        {% else %}
+                            <div class="bg-dark rounded d-flex justify-content-center align-items-center" style="height: 60px;"><small>No Img</small></div>
+                        {% endif %}
+                    </div>
+                    <div class="col-5">
+                        <h5 class="mb-0 text-white">{{ item.product.name }}</h5>
+                        <small class="text-secondary">{{ item.product.rarity }}</small>
+                    </div>
+                    <div class="col-2">
+                        {% if item.product.image_url %}
+                            <img src="{{ item.product.image_url }}" class="img-fluid rounded border border-secondary shadow-sm" alt="Product" onerror="this.onerror=null; this.src='https://placehold.co/100x100/020617/38bdf8?text=Item';">
+                        {% else %}
+                            <div class="bg-dark rounded d-flex justify-content-center align-items-center border border-secondary shadow-sm" style="height: 60px;"><small class="text-secondary">No Img</small></div>
+                        {% endif %}
+                    </div>
+                    <div class="col-2 text-end text-primary fw-bold">
+                        ₱{{ "{:,.2f}".format(item.product.price * item.quantity) }}
+                    </div>
+                    <div class="col-1 text-end">
+                        <a href="{{ url_for('remove_from_cart', cart_item_id=item.id) }}" class="btn btn-sm btn-danger">X</a>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="row mt-4">
+                    <div class="col text-end">
+                        <h4 class="text-white">Total: <span class="text-primary fw-bold">₱{{ "{:,.2f}".format(total_price) }}</span></h4>
+                        <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg mt-3 fw-bold w-50">Proceed to Checkout</a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card p-5 text-center shadow">
+                <h4 class="text-secondary mb-4">Your stash is currently empty.</h4>
+                <a href="{{ url_for('index') }}" class="btn btn-primary w-25 mx-auto">Browse Market</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4 shadow">
+            <h2 class="mb-4 text-center fw-bold text-primary">Sign Up</h2>
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="mb-3">{{ form.email.label(class="form-label") }} {{ form.email() }}</div>
+                <div class="mb-3">{{ form.dota2_username.label(class="form-label") }} {{ form.dota2_username() }}</div>
+                <div class="mb-3">{{ form.steam_id.label(class="form-label") }} {{ form.steam_id() }}</div>
+                <div class="mb-3">{{ form.password.label(class="form-label") }} {{ form.password() }}</div>
+                <div class="mb-4">{{ form.confirm_password.label(class="form-label") }} {{ form.confirm_password() }}</div>
+                {{ form.submit() }}
+            </form>
+<p class="mt-4 text-center" style="color: #94a3b8;">Already have an account? <a href="{{ url_for('login') }}" class="text-cyan text-decoration-none fw-bold">Log in</a></p>        </div>
+    </div>
+</div>
+{% endblock %}
