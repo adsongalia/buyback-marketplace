@@ -7,7 +7,7 @@
             <div class="d-flex align-items-center">
                 <a href="{{ url_for('messages') }}" class="btn btn-outline-secondary border-0 me-3" style="color: #94a3b8;"><i class="fas fa-arrow-left"></i></a>
                 <div class="rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; background-color: var(--border-color); color: #00e5ff; font-weight: bold; font-size: 1.2rem;">
-                    {{ chat_partner.dota2_username[0]|upper }}
+                    {{ chat_partner.dota2_username[0]|upper if chat_partner.dota2_username else "U" }}
                 </div>
                 <div>
                     <h4 class="text-white m-0 fw-bold">{{ chat_partner.dota2_username }}</h4>
@@ -15,7 +15,7 @@
                 </div>
             </div>
             
-            <button @click="deleteConversation" class="btn btn-outline-danger btn-sm border-0 fw-bold" title="Wipe History">
+            <button @click="deleteConversation" class="btn btn-outline-danger btn-sm border-0 fw-bold" title="Clear Conversation">
                 <i class="fas fa-trash-alt me-1"></i> Clear Chat
             </button>
         </div>
@@ -41,13 +41,13 @@
                     </div>
                     
                     <div class="mt-1" style="font-size: 0.75rem; color: #64748b; padding: 0 5px;">
-                        {% raw %}{{ msg.timestamp }}{% endraw %}
+                        {% raw %}{{ formatTimestamp(msg.timestamp) }}{% endraw %}
                     </div>
                 </div>
 
                 <div v-if="messages.length === 0" class="text-center text-muted my-auto py-5">
-                    <i class="fas fa-comments fs-1 mb-3" style="color: #3b4b6b;"></i>
-                    <h5>Say hello to {{ chat_partner.dota2_username }}!</h5>
+                    <i class="fas fa-comments fs-1 mb-3" style="color: #3b4b6b;"></i> 
+                    <h5>Start a conversation with {{ chat_partner.dota2_username }}.</h5>
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
         <form @submit.prevent="sendMessage" class="mt-3">
             <div class="input-group shadow-lg" style="border-radius: 50px; overflow: hidden; border: 1px solid var(--accent-cyan);">
                 <input v-model="newMessage" type="text" class="form-control text-white border-0 py-3 px-4" style="background-color: var(--bg-card); box-shadow: none;" placeholder="Type a message..." required autocomplete="off">
-                <button type="submit" class="btn btn-primary fw-bold px-4 px-md-5" :disabled="isSending" style="border-radius: 0;">
+                <button type="submit" class="btn btn-primary fw-bold px-4 px-md-5" :disabled="isSending" style="border-radius: 0;"> 
                     <i class="fas fa-paper-plane me-1 d-none d-md-inline"></i> SEND
                 </button>
             </div>
@@ -74,6 +74,13 @@
             
             let partnerId = null;
             const currentUserId = ref(null); 
+
+            const formatTimestamp = (isoString) => {
+                if (!isoString) return '';
+                return new Date(isoString).toLocaleTimeString([], {
+                    hour: '2-digit', minute: '2-digit'
+                });
+            };
 
             const fetchMessages = async () => {
                 try {
@@ -135,7 +142,7 @@
                 setInterval(fetchMessages, 3000); 
             });
 
-            return { messages, newMessage, isSending, sendMessage, deleteConversation, currentUserId };
+            return { messages, newMessage, isSending, sendMessage, deleteConversation, currentUserId, formatTimestamp };
         }
     }).mount('#vue-chat');
 </script>

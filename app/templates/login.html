@@ -3,8 +3,8 @@
 <div class="row justify-content-center mt-5 mb-5">
     <div class="col-md-7 col-lg-5">
         <div class="text-center mb-4">
-            <h2 class="fw-bolder text-white text-uppercase" style="letter-spacing: 2px;">Welcome Back</h2>
-            <p style="color: #94a3b8;">Sign in to manage your stash and messages.</p>
+            <h2 class="fw-bolder text-white text-uppercase" style="letter-spacing: 2px;">Welcome Back to BUYBACK</h2>
+            <p style="color: #94a3b8;">Sign in to access your account and manage your listings.</p>
         </div>
         
         <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
@@ -29,10 +29,17 @@
                     {% for error in form.password.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-sign-in-alt me-2"></i> Log In</button>
+                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-sign-in-alt me-2"></i> Sign In</button>
             </form>
-            
-            <p class="mt-4 mb-0 text-center" style="color: #94a3b8;">New to the market? <a href="{{ url_for('register') }}" class="text-cyan text-decoration-none fw-bold">Sign up</a></p>
+
+            <div class="d-flex align-items-center my-4">
+                <hr class="flex-grow-1" style="border-color: var(--border-color);">
+                <span class="mx-3 text-muted">OR</span>
+                <hr class="flex-grow-1" style="border-color: var(--border-color);">
+            </div>
+            <a href="{{ url_for('google_login') }}" class="btn btn-light w-100 py-2 fw-bold shadow-sm d-flex justify-content-center align-items-center" style="color: #000;"><img src="https://www.google.com/favicon.ico" style="width: 18px; height: 18px;" class="me-2"> Sign In with Google</a>
+
+            <p class="mt-4 mb-0 text-center" style="color: #94a3b8;">New to BUYBACK? <a href="{{ url_for('register') }}" class="text-cyan text-decoration-none fw-bold">Create an Account</a></p>
         </div>
     </div>
 </div>

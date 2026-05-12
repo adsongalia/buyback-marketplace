@@ -10,14 +10,14 @@
         {% raw %}{{ alertMessage }}{% endraw %}
     </div>
 
-        <div class="d-flex align-items-center mb-4">
-            <h2 class="text-white fw-bolder m-0 text-uppercase" style="letter-spacing: 1px;">
-                <i class="fas fa-shopping-cart text-cyan me-3"></i> YOUR STASH
+        <div class="text-center mb-4">
+            <h2 class="text-white fw-bolder d-inline-block m-0 text-uppercase" style="letter-spacing: 1px;">
+                <i class="fas fa-shopping-cart text-cyan me-3"></i> Your Shopping Cart
             </h2>
         </div>
         
         <div v-if="loading" class="text-center p-5">
-            <h4 class="text-muted">Loading your treasures...</h4>
+            <h4 class="text-muted">Loading your cart items...</h4>
         </div>
 
         <div v-else-if="cartItems.length > 0" class="card p-0 shadow-lg border-0 overflow-hidden" style="background-color: var(--bg-card);">
@@ -25,7 +25,7 @@
             <div v-for="item in cartItems" :key="item.id" class="row g-0 align-items-center p-4 border-bottom" style="border-color: var(--border-color) !important; transition: background 0.2s;">
                 
                 <div class="col-md-2 text-center">
-                    <img v-if="item.product.image_url" :src="item.product.image_url" class="img-fluid rounded border shadow-sm" style="border-color: var(--border-color) !important; min-height: 80px; object-fit: cover;" :alt="item.product.name" onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect fill=\'%230b101e\' width=\'100\' height=\'100\'/%3E%3Ctext fill=\'%233b4b6b\' x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'12\' font-weight=\'bold\'%3EITEM%3C/text%3E%3C/svg%3E';">
+                    <img v-if="item.product.image_url" :src="item.product.image_url" class="img-fluid rounded border shadow-sm" style="border-color: var(--border-color) !important; min-height: 80px; object-fit: cover;" :alt="item.product.name" onerror="this.style.display='none';">
                 </div>
                 
                 <div class="col-md-4 ps-md-4 mt-3 mt-md-0 text-center text-md-start">
@@ -52,8 +52,8 @@
             
             <div class="p-4" style="background-color: var(--bg-main);">
                 <div class="row align-items-center">
-                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                        <h4 class="text-muted m-0 text-uppercase fw-bold">Total Due: <span class="text-success fs-3 ms-2 fw-bolder">₱{% raw %}{{ totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}</span></h4>
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0"> 
+                        <h4 class="text-muted m-0 text-uppercase fw-bold">Order Total: <span class="text-success fs-3 ms-2 fw-bolder">₱{% raw %}{{ totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}</span></h4>
                     </div>
                     <div class="col-md-6 text-center text-md-end">
                         <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg fw-bold shadow-lg px-5 py-3 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-bolt me-2"></i> Proceed to Checkout</a>
@@ -62,13 +62,13 @@
             </div>
         </div>
 
-        <div v-else class="card p-5 text-center shadow-lg border-0" style="background-color: var(--bg-card);">
+        <div v-else class="card p-5 text-center shadow-lg border-0" style="background-color: var(--bg-card);"> 
             <div class="mb-4" style="font-size: 5rem; color: #3b4b6b;">🛒</div>
-            <h3 class="text-white fw-bold mb-3">Your stash is completely empty.</h3>
+            <h3 class="text-white fw-bold mb-3">Your shopping cart is empty.</h3>
             
-            <p class="mb-4 fs-5" style="color: #94a3b8;">Time to farm some gold and visit the marketplace.</p>
+            <p class="mb-4 fs-5" style="color: #94a3b8;">Browse our marketplace to find your next treasure.</p>
             
-            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-5 fw-bold mx-auto shadow-sm">Browse Market</a>
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-5 fw-bold mx-auto shadow-sm">Browse Marketplace</a>
         </div>
     </div>
 </div>

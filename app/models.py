@@ -7,9 +7,10 @@ class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
     dota2_username = db.Column(db.String(80))
     steam_id = db.Column(db.String(80))
+    google_sub = db.Column(db.String(255), unique=True, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -30,26 +31,22 @@ class Product(db.Model):
     status = db.Column(db.String(50)) 
     quantity = db.Column(db.Integer, default=1)
     description = db.Column(db.Text)
-    image_url = db.Column(db.String(255))
     
     # NEW: Link product to the seller
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
     seller = db.relationship('User', backref=db.backref('my_products', lazy=True))
 
-    def __repr__(self):
-        return f"<Product {self.name}>"
-    __tablename__ = "products"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    rarity = db.Column(db.String(50))
-    status = db.Column(db.String(50)) 
-    quantity = db.Column(db.Integer, default=1)
-    description = db.Column(db.Text)
-    image_url = db.Column(db.String(255))
+    # NEW: Relationship to ProductImage, replacing the old image_url field
+    images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Product {self.name}>"
+
+class ProductImage(db.Model):
+    __tablename__ = "product_images"
+    id = db.Column(db.Integer, primary_key=True)
+    image_filename = db.Column(db.String(255), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
 
 class CartItem(db.Model):
     __tablename__ = "cart_items"

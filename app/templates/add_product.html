@@ -3,20 +3,20 @@
 <div class="row justify-content-center mt-4 mb-5">
     <div class="col-md-8 col-lg-6">
         <h3 class="mb-4 text-cyan fw-bold text-center text-uppercase" style="letter-spacing: 2px;"><i class="fas fa-gavel me-2"></i> List an Item</h3>
-        
+
         <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
-            <form method="post" novalidate>
+            <form method="post" novalidate enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
                 
                 <div class="mb-4">
                     {{ form.name.label(class="form-label text-cyan") }} 
-                    {{ form.name(class="form-control", placeholder="e.g. Manifold Paradox") }}
+                    {{ form.name(class="form-control", placeholder="e.g., Manifold Paradox") }}
                     {% for error in form.name.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
                 <div class="row">
                     <div class="col-md-6 mb-4">
-                        {{ form.price.label(class="form-label text-cyan") }} 
+                        {{ form.price.label(class="form-label text-cyan") }}
                         <div class="input-group shadow-sm">
                             <span class="input-group-text border-0" style="background-color: #3b4b6b; color: white;">₱</span>
                             {{ form.price(class="form-control", type="number", min="0", step="0.01", placeholder="0.00") }}
@@ -25,39 +25,38 @@
                     </div>
                     
                     <div class="col-md-6 mb-4">
-                        {{ form.quantity.label(class="form-label text-cyan") }} 
+                        {{ form.quantity.label(class="form-label text-cyan") }}
                         {{ form.quantity(class="form-control", type="number", min="0", placeholder="1") }}
                         {% for error in form.quantity.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    {{ form.image_url.label(class="form-label text-cyan") }} 
-                    {{ form.image_url(class="form-control", placeholder="https://steamcommunity.com/...") }}
-                    <small class="text-muted mt-1 d-block">Leave blank if you don't have an image.</small>
-                    {% for error in form.image_url.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
+                    {{ form.images.label(class="form-label text-cyan") }} 
+                    {{ form.images(class="form-control") }}
+                    {% for error in form.images.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
                 <div class="row">
                     <div class="col-md-6 mb-4">
-                        {{ form.rarity.label(class="form-label text-cyan") }} 
+                        {{ form.rarity.label(class="form-label text-cyan") }}
                         {{ form.rarity(class="form-select") }}
                     </div>
                     
                     <div class="col-md-6 mb-4">
-                        {{ form.status.label(class="form-label text-cyan") }} 
+                        {{ form.status.label(class="form-label text-cyan") }}
                         {{ form.status(class="form-select") }}
                     </div>
                 </div>
                 
                 <div class="mb-4">
-                    {{ form.description.label(class="form-label text-cyan") }} 
-                    {{ form.description(class="form-control", rows="4", placeholder="Describe the item's history or special gems...") }}
+                    {{ form.description.label(class="form-label text-cyan") }}
+                    {{ form.description(class="form-control", rows="4", placeholder="Provide a detailed description of your item.") }}
                 </div>
                 
                 <hr style="border-color: var(--border-color);" class="mb-4">
-                
-                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-plus-circle me-2"></i> Add Listing</button>
+
+                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-5 text-uppercase shadow-sm"><i class="fas fa-plus-circle me-2"></i> Create Listing</button>
             </form>
         </div>
     </div>

@@ -81,14 +81,22 @@
                 {% if current_user.is_authenticated %}
                     <span class="text-secondary d-none d-md-block">Welcome, <strong class="text-gold">{{ current_user.dota2_username }}</strong></span>
                     
-                    <a href="{{ url_for('messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold" style="background-color: var(--accent-cyan); border: none;"><i class="fas fa-comment-dots"></i> Inbox</a>
-                    <a href="{{ url_for('cart') }}" class="btn btn-warning btn-sm px-3 shadow-sm"><i class="fas fa-shopping-cart"></i> Cart</a>
-                    <a href="{{ url_for('add_product') }}" class="btn btn-success btn-sm px-3"><i class="fas fa-plus"></i> Sell Item</a>
-                    <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary btn-sm px-3 text-light">Profile</a>
-                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm px-3">Log Out</a>
+                    <a href="{{ url_for('messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold" style="background-color: var(--accent-cyan); border: none;"><i class="fas fa-comment-dots"></i> Inbox</a> 
+                    <a href="{{ url_for('cart') }}" class="btn btn-warning btn-sm px-3 shadow-sm"><i class="fas fa-shopping-cart"></i> Cart</a> 
+                    <a href="{{ url_for('add_product') }}" class="btn btn-success btn-sm px-3"><i class="fas fa-plus"></i> Sell Item</a> 
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm px-3 text-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Account
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" style="background-color: #1e293b; border-color: var(--border-color);">
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile Settings</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('my_listings') }}">Your Listings</a></li>
+                        </ul>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm px-3">Sign Out</a>
                 {% else %}
-                    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-sm px-3 text-light">Sign Up</a>
-                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm px-4">Log In</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-sm px-3 text-light">Register</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm px-4">Sign In</a>
                 {% endif %}
             </div>
         </div>

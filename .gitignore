@@ -1,5 +1,12 @@
-venv/
-__pycache__/
-instance/
+# Environment variables
 .env
-.flaskenv
+
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+
+# SQLite Database
+app.db
+instance/
