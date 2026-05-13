@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from sqlalchemy.pool import NullPool
 
 # Find the absolute path of the directory containing this file
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -17,6 +18,10 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # NEW: Add engine options for serverless compatibility
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'poolclass': NullPool
+    }
 
     # Google OAuth
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
