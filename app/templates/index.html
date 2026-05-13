@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="p-5 mb-5 rounded-4 text-center shadow" style="background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); border: 1px solid #334155;">
-    <h1 class="display-4 fw-bolder text-white mb-3">Elevate Your Net Worth</h1>
-    <p class="fs-5 text-secondary">The definitive marketplace for Dota 2 treasures.</p>
+    <h1 class="display-4 fw-bolder text-white mb-3">The Premier Dota 2 Marketplace</h1>
+    <p class="fs-5 text-secondary">Buy and sell rare virtual items from the world of Dota 2.</p>
 </div>
 
 <div id="vue-marketplace">
@@ -20,8 +20,8 @@
     </div>
 
     <div class="row g-4">
-        <div v-for="product in products" :key="product.id" class="col-md-4 col-lg-3">
-            <div class="card card-hover h-100 overflow-hidden">
+        <div v-for="(product, index) in products" :key="product.id" class="col-md-4 col-lg-3">
+            <div class="card card-hover h-100 overflow-hidden animated-card" :style="{ animationDelay: (index * 50) + 'ms' }">
                 
                 <a :href="'/product/' + product.id" class="text-decoration-none">
                     <div class="position-relative w-100" style="height: 220px; background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">

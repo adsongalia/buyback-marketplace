@@ -43,13 +43,24 @@
                 </div>
 
                 <hr class="my-4" style="border-color: #3b4b6b;">
+
+                <h5 class="text-white mb-3">Order Summary</h5>
+                <div class="mb-4 p-3 rounded" style="background-color: var(--bg-main);">
+                    {% for item in cart_items %}
+                    <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-2{% endif %}">
+                        <span class="text-white">{% if item.quantity > 1 %}{{ item.quantity }}x {% endif %}{{ item.product.name }}</span>
+                        <span class="text-muted">₱{{ "{:,.2f}".format(item.product.price * item.quantity) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr class="my-4" style="border-color: #3b4b6b;">
                 
                 <div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded" style="background-color: var(--bg-main);">
                     <h5 class="mb-0 fw-bold text-uppercase" style="color: #94a3b8;">Order Total</h5>
                     <h3 class="text-success fw-bolder mb-0">₱{{ "{:,.2f}".format(total_price) }}</h3>
                 </div>
 
-                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 text-uppercase tracking-wider shadow"><i class="fas fa-shield-alt me-2"></i> Securely Place Order</button>
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 text-uppercase tracking-wider shadow"><i class="fas fa-check-circle me-2"></i> Place Order</button>
             </form>
         </div>
     </div>

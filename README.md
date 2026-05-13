@@ -1,8 +1,6 @@
 \# BUYBACK - Dota 2 Marketplace
 
-"Elevate your Networth and equip your legend in the definitive marketplace for Dota 2 treasures."
-
-
+A marketplace for buying and selling Dota 2 virtual items.
 
 This is a full-stack Flask web application built for our Midterm Project. It features user authentication, dynamic marketplace routing, a relational database, and an interactive shopping cart/checkout system.
 
@@ -45,4 +43,3 @@ This is a full-stack Flask web application built for our Midterm Project. It fea
 6\. (Optional) Populate the market: `python seed.py`
 
 7\. Run the application: `flask run`
-

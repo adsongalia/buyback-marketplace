@@ -6,8 +6,8 @@ import uuid
 from werkzeug.utils import secure_filename
 from app import app, db
 from app import oauth
-from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm
-from app.models import User, Product, CartItem, Message, ProductImage
+from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm, ChangePasswordForm
+from app.models import User, Product, CartItem, Message, ProductImage, PriceHistory, Order
 
 @app.route("/")
 @app.route("/index")
@@ -35,7 +35,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash("Account created! Welcome to BUYBACK.", "success")
+        flash("Your account has been created successfully.", "success")
         return redirect(url_for('login'))
         
     return render_template("register.html", title="Sign Up", form=form)
@@ -50,8 +50,8 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash("Invalid email or password", "danger")
             return redirect(url_for('login'))
-        login_user(user)
-        flash(f"Welcome back, {user.dota2_username}.", "success")
+        login_user(user) 
+        flash("You have been logged in successfully.", "success")
         return redirect(url_for("index"))
     return render_template("login.html", title="Log In", form=form)
 
@@ -87,9 +87,16 @@ def google_auth():
             )
             db.session.add(user)
             db.session.commit()
-            flash("Your account has been created successfully. Please update your Steam ID in your profile settings.", "success")
+            login_user(user)
+            flash("Welcome! Please complete your profile by setting your Dota 2 username and Steam ID.", "info")
+            return redirect(url_for('edit_profile'))
 
     login_user(user)
+    # If an existing user logs in via Google but hasn't set their username, prompt them.
+    if not user.dota2_username or not user.steam_id:
+        flash("Welcome back! We noticed your profile is incomplete. Please take a moment to update it.", "info")
+        return redirect(url_for('edit_profile'))
+        
     return redirect(url_for('index'))
 
 @app.route("/logout")
@@ -121,21 +128,37 @@ def add_product():
             user_id=current_user.id
         )
         db.session.add(new_product)
+        db.session.flush()  # Flush to assign an ID to new_product for the foreign key
+
+        # BONUS 2: Add initial price to history
+        initial_price = PriceHistory(product_id=new_product.id, price=new_product.price)
+        db.session.add(initial_price)
 
         # Handle file uploads
         uploaded_files = request.files.getlist('images') # Use 'images' as the field name
         for file in uploaded_files:
             if file and file.filename != '':
-                # FIX: Generate a unique filename to prevent collisions
+                # Generate a unique path for the object in the bucket
                 _, ext = os.path.splitext(file.filename)
-                filename = secure_filename(f"{uuid.uuid4()}{ext.lower()}") # Use uuid for unique filenames
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                file_path = f"public/{uuid.uuid4()}{ext.lower()}"
                 
-                new_image = ProductImage(image_filename=filename, product=new_product)
+                # Upload to Supabase Storage
+                supabase_client = app.config['SUPABASE_CLIENT']
+                bucket_name = app.config['SUPABASE_BUCKET']
+                file_bytes = file.read()
+                supabase_client.storage.from_(bucket_name).upload(
+                    path=file_path,
+                    file=file_bytes,
+                    file_options={"content-type": file.content_type}
+                )
+
+                # Save the path to the database (NOT the full URL)
+                # The model was changed from image_filename to image_path
+                new_image = ProductImage(image_path=file_path, product=new_product)
                 db.session.add(new_image)
 
         db.session.commit()
-        flash("Product listed successfully!", "success")
+        flash("Your product has been listed successfully.", "success")
         return redirect(url_for("my_listings")) # Redirect to my_listings after adding
     return render_template("add_product.html", title="Sell Item", form=form)
 
@@ -146,16 +169,44 @@ def delete_product(product_id):
     if product.user_id != current_user.id: # Ensure current_user is the owner
         flash("You cannot delete someone else's product!", "danger")
         return redirect(url_for('my_listings'))
+
+    # Delete associated images from Supabase Storage
+    try:
+        supabase_client = app.config['SUPABASE_CLIENT']
+        bucket_name = app.config['SUPABASE_BUCKET']
+        paths_to_remove = [image.image_path for image in product.images]
+        if paths_to_remove:
+            supabase_client.storage.from_(bucket_name).remove(paths_to_remove)
+    except Exception as e:
+        flash(f"Could not delete product images from storage: {str(e)}", "warning")
+        # Decide if you want to stop the process or just log the error
+        # For now, we'll continue to delete the DB record
         
     db.session.delete(product)
     db.session.commit()
-    flash(f"{product.name} has been removed from the marketplace.", "success")
+    flash(f"'{product.name}' has been successfully deleted.", "success")
     return redirect(url_for('my_listings'))
 
 @app.route("/product/<int:product_id>")
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
-    return render_template("product_detail.html", title=product.name, product=product)
+
+    # BONUS 3: Price comparison logic
+    all_listings_same_name = Product.query.filter(Product.name == product.name).all()
+    other_listings = sorted([p for p in all_listings_same_name if p.id != product.id], key=lambda x: x.price)
+
+    is_cheapest = False
+    if all_listings_same_name:
+        min_price = min(p.price for p in all_listings_same_name)
+        if product.price <= min_price:
+            is_cheapest = True
+
+    return render_template("product_detail.html", 
+                           title=product.name, 
+                           product=product,
+                           other_listings=other_listings,
+                           is_cheapest=is_cheapest
+                          )
 
 @app.route("/edit_profile", methods=["GET", "POST"])
 @login_required
@@ -223,14 +274,14 @@ def add_to_cart(product_id):
         if cart_item.quantity < product.quantity:
             cart_item.quantity += 1 # Increment quantity if item already in cart
             db.session.commit()
-            flash(f"Another {product.name} added to your cart.", "success")
+            flash(f"The quantity of '{product.name}' in your cart has been updated.", "success")
         else:
             flash(f"You cannot add more {product.name}. Max stock reached.", "warning")
     else:
         new_cart_item = CartItem(user_id=current_user.id, product_id=product_id)
         db.session.add(new_cart_item)
         db.session.commit()
-        flash(f"{product.name} added to your cart!", "success")
+        flash(f"'{product.name}' has been added to your cart.", "success")
         
     return redirect(url_for('index', _anchor='market-grid'))
 
@@ -254,35 +305,86 @@ def remove_from_cart(cart_item_id):
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
-    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-    if not cart_items: # Redirect if cart is empty
-        flash("Your cart is empty!", "warning")
-        return redirect(url_for('index'))
-        
-    total_price = sum(item.product.price * item.quantity for item in cart_items)
+    buy_now_product_id = request.args.get('buy_now_product_id', type=int)
+    
+    if buy_now_product_id:
+        # --- Buy Now Logic ---
+        product = Product.query.get_or_404(buy_now_product_id)
+        # Create a temporary, non-db object for display purposes
+        cart_items = [{"product": product, "quantity": 1}]
+        total_price = product.price
+    else:
+        # --- Standard Cart Checkout Logic ---
+        cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+        if not cart_items:
+            flash("Your cart is empty!", "warning")
+            return redirect(url_for('index'))
+        total_price = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == "POST":
-        # Re-check stock before finalizing purchase to prevent overselling
-        for item in cart_items:
-            if item.product.quantity < item.quantity:
-                flash(f"Sorry, the quantity for {item.product.name} has changed. There are only {item.product.quantity} left in stock.", "danger")
+        if buy_now_product_id:
+            # --- Finalize Buy Now ---
+            product_to_buy = Product.query.get_or_404(buy_now_product_id)
+            if product_to_buy.quantity < 1:
+                flash(f"Sorry, {product_to_buy.name} is out of stock.", "danger")
+                return redirect(url_for('product_detail', product_id=product_to_buy.id))
+            
+            # Create an Order record
+            new_order = Order(
+                buyer_id=current_user.id,
+                seller_id=product_to_buy.user_id,
+                product_id=product_to_buy.id,
+                quantity=1,
+                price_at_purchase=product_to_buy.price,
+                delivery_status='Pending'
+            )
+            db.session.add(new_order)
+            product_to_buy.quantity -= 1
+            db.session.commit()
+            flash(f"Your order for ₱{product_to_buy.price:,.2f} has been placed successfully. The seller has been notified.", "success")
+            return redirect(url_for('index'))
+        else:
+            # --- Finalize Standard Cart ---
+            # Re-check stock before finalizing purchase
+            cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).all()
+            
+            # Check stock for all items first
+            out_of_stock_items = []
+            for item in cart_items_from_db:
+                if item.product.quantity < item.quantity:
+                    out_of_stock_items.append(item.product.name)
+            
+            if out_of_stock_items:
+                flash(f"Sorry, the quantity for some items has changed: {', '.join(out_of_stock_items)}. Please review your cart.", "danger")
                 return redirect(url_for('cart'))
 
-        # If all items are in stock, proceed with the transaction
-        for item in cart_items:
-            product = Product.query.get(item.product_id)
-            product.quantity -= item.quantity
-            db.session.delete(item)
+            # If all stock is good, proceed with creating orders and updating quantities
+            for item in cart_items_from_db:
+                # Create an Order record for each item
+                new_order = Order(
+                    buyer_id=current_user.id,
+                    seller_id=item.product.user_id,
+                    product_id=item.product.id,
+                    quantity=item.quantity,
+                    price_at_purchase=item.product.price,
+                    delivery_status='Pending'
+                )
+                db.session.add(new_order)
+                item.product.quantity -= item.quantity
+                db.session.delete(item)
             
-        db.session.commit()
-        flash(f"Payment of ₱{total_price:,.2f} successful. Your order has been placed.", "success")
-        return redirect(url_for('index'))
+            db.session.commit()
+            flash(f"Your order for ₱{total_price:,.2f} has been placed successfully. Sellers have been notified.", "success")
+            return redirect(url_for('index'))
         
-    return render_template("checkout.html", title="Checkout", total_price=total_price)
+    return render_template("checkout.html", title="Checkout", total_price=total_price, cart_items=cart_items)
 
 @app.route("/messages")
 @login_required
 def messages():
+    # Also fetch pending deliveries for the current user as a seller
+    pending_deliveries_count = Order.query.filter_by(seller_id=current_user.id, delivery_status='Pending').count()
+
     active_messages = Message.query.filter(
         or_(
             and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
@@ -298,8 +400,9 @@ def messages():
             active_partner_ids.add(msg.recipient_id)
             
     other_users = User.query.filter(User.id.in_(active_partner_ids)).all()
-    
-    return render_template("messages.html", title="Inbox", other_users=other_users)
+
+    # Pass pending_deliveries_count to the template for a notification badge
+    return render_template("messages.html", title="Inbox", other_users=other_users, pending_deliveries_count=pending_deliveries_count)
 
 # ---> HERE IS THE MISSING ROUTE! <---
 @app.route("/chat/<int:user_id>")
@@ -308,6 +411,26 @@ def chat(user_id):
     """Renders the Vue.js chat room UI."""
     chat_partner = User.query.get_or_404(user_id)
     return render_template("chat.html", title=f"Chat with {chat_partner.dota2_username}", chat_partner=chat_partner)
+
+@app.route("/seller_deliveries")
+@login_required
+def seller_deliveries():
+    # Get all orders where the current user is the seller and delivery is pending
+    pending_deliveries = Order.query.filter_by(seller_id=current_user.id, delivery_status='Pending').order_by(Order.order_date.asc()).all()
+    return render_template("seller_deliveries.html", title="Pending Deliveries", deliveries=pending_deliveries)
+
+@app.route("/mark_delivered/<int:order_id>", methods=["POST"])
+@login_required
+def mark_delivered(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.seller_id != current_user.id:
+        flash("You are not authorized to mark this order as delivered.", "danger")
+        return redirect(url_for('seller_deliveries'))
+
+    order.delivery_status = 'Delivered'
+    db.session.commit()
+    flash(f"Order {order.id} for {order.product.name} marked as delivered.", "success")
+    return redirect(url_for('seller_deliveries'))
 
 @app.route("/api/chat/<int:user_id>")
 @login_required
@@ -338,8 +461,8 @@ def api_products():
             "id": p.id, "name": p.name, "price": p.price,
             "rarity": p.rarity, "status": p.status, 
             "quantity": p.quantity,
-            "images": [url_for('static', filename=f'uploads/{img.image_filename}') for img in p.images]
-        }) # Return all image URLs for the product
+            "images": f"{app.jinja_env.globals['IMAGE_BASE_URL']}/{p.images[0].image_path}" if p.images else None
+        })
     return jsonify(product_list)
 
 @app.route("/api/add_to_cart/<int:product_id>", methods=["POST"])
@@ -378,7 +501,7 @@ def api_cart():
                 "price": item.product.price,
                 "rarity": item.product.rarity,
                 # Use the first available image, or None if there are no images for display in cart
-                "image_url": url_for('static', filename=f'uploads/{item.product.images[0].image_filename}') if item.product.images else None
+                "image_url": f"{app.jinja_env.globals['IMAGE_BASE_URL']}/{item.product.images[0].image_path}" if item.product.images else None
             }
         })
     return jsonify(cart_list)
@@ -419,6 +542,11 @@ def edit_product(product_id):
     form = ProductForm()
     
     if form.validate_on_submit():
+        # BONUS 2: Check if price changed to add to history
+        if product.price != form.price.data:
+            price_update = PriceHistory(product_id=product.id, price=form.price.data)
+            db.session.add(price_update)
+
         product.name = form.name.data
         product.price = form.price.data
         product.rarity = form.rarity.data
@@ -430,11 +558,20 @@ def edit_product(product_id):
         uploaded_files = request.files.getlist(form.images.name)
         for file in uploaded_files:
             if file and file.filename != '': # Process new image uploads
-                # FIX: Generate a unique filename to prevent collisions
                 _, ext = os.path.splitext(file.filename)
-                filename = secure_filename(f"{uuid.uuid4()}{ext.lower()}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                new_image = ProductImage(image_filename=filename, product=product)
+                file_path = f"public/{uuid.uuid4()}{ext.lower()}"
+
+                # Upload to Supabase Storage
+                supabase_client = app.config['SUPABASE_CLIENT']
+                bucket_name = app.config['SUPABASE_BUCKET']
+                file_bytes = file.read()
+                supabase_client.storage.from_(bucket_name).upload(
+                    path=file_path,
+                    file=file_bytes,
+                    file_options={"content-type": file.content_type}
+                )
+
+                new_image = ProductImage(image_path=file_path, product=product)
                 db.session.add(new_image)
 
         db.session.commit()
@@ -460,14 +597,14 @@ def delete_product_image(image_id):
     if image_to_delete.product.user_id != current_user.id:
         return jsonify({"status": "error", "message": "Unauthorized: You do not have permission to delete this image."}), 403
 
-    # Construct the full path to the image file
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], image_to_delete.image_filename)
-
     try:
-        # Delete the file from the filesystem
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        
+        # Delete the file from Supabase Storage
+        supabase_client = app.config['SUPABASE_CLIENT']
+        bucket_name = app.config['SUPABASE_BUCKET']
+        # The image_path is stored in the database
+        path_to_remove = image_to_delete.image_path
+        supabase_client.storage.from_(bucket_name).remove([path_to_remove])
+
         # Delete the image record from the database
         db.session.delete(image_to_delete)
         db.session.commit()

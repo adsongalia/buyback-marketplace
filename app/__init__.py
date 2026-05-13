@@ -2,22 +2,26 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager # NEW
-import os # NEW
+import os
 from authlib.integrations.flask_client import OAuth # NEW
 from config import Config
+from supabase import create_client, Client # NEW
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-# NEW: Configuration for file uploads and folder creation
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login = LoginManager(app)         # NEW
 login.login_view = 'login'        # NEW: Redirects here if they try to access a protected page
 oauth = OAuth(app)                # NEW
+
+# NEW: Supabase Initialization
+url: str = app.config.get("SUPABASE_URL")
+key: str = app.config.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+app.config['SUPABASE_CLIENT'] = supabase
+app.config['SUPABASE_BUCKET'] = "product-images" # The bucket name you created
 
 oauth.register(                   # NEW
     name='google',
@@ -30,6 +34,9 @@ oauth.register(                   # NEW
 )
 
 # NEW: Make len() function available in Jinja2 templates
-app.jinja_env.globals.update(len=len)
+# NEW: Add image base URL to Jinja2 templates
+image_base_url = f"{url}/storage/v1/object/public/{app.config['SUPABASE_BUCKET']}"
+app.jinja_env.globals.update(len=len, IMAGE_BASE_URL=image_base_url)
+
 
 from app import routes, models # noqa

@@ -70,6 +70,25 @@
         /* Typography */
         .text-gold { color: var(--accent-gold) !important; }
         .text-cyan { color: var(--accent-cyan) !important; }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animated-card {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0; /* Start hidden */
+        }
+
+        /* Loader */
+        .loader { width: 48px; height: 48px; border: 3px solid var(--accent-cyan); border-radius: 50%; display: inline-block; position: relative; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        .loader::after { content: ''; box-sizing: border-box; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; border: 3px solid; border-color: var(--accent-cyan) transparent; }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
@@ -120,6 +139,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         document.addEventListener("DOMContentLoaded", function() {
