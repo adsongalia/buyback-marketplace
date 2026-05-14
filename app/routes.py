@@ -1,5 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, current_app, Blueprint
 from flask_login import current_user, login_user, logout_user, login_required
+from datetime import datetime
 from sqlalchemy import or_, and_
 import os
 import uuid
@@ -345,24 +346,46 @@ def messages():
     # Also fetch pending deliveries for the current user as a seller
     pending_deliveries_count = Order.query.filter_by(seller_id=current_user.id, delivery_status='Pending').count()
 
-    active_messages = Message.query.filter(
-        or_(
-            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
-            and_(Message.recipient_id == current_user.id, Message.deleted_by_recipient == False)
-        )
-    ).all()
-    
-    active_partner_ids = set()
-    for msg in active_messages:
-        if msg.sender_id != current_user.id:
-            active_partner_ids.add(msg.sender_id)
-        if msg.recipient_id != current_user.id:
-            active_partner_ids.add(msg.recipient_id)
-            
-    other_users = User.query.filter(User.id.in_(active_partner_ids)).all()
+    # Find all unique users current_user has messaged or received messages from
+    sent_to_ids = db.session.query(Message.recipient_id).filter(
+        Message.sender_id == current_user.id, Message.deleted_by_sender == False
+    ).distinct()
+    received_from_ids = db.session.query(Message.sender_id).filter(
+        Message.recipient_id == current_user.id, Message.deleted_by_recipient == False
+    ).distinct()
 
-    # Pass pending_deliveries_count to the template for a notification badge
-    return render_template("messages.html", title="Inbox", other_users=other_users, pending_deliveries_count=pending_deliveries_count)
+    active_partner_ids = set([id for id, in sent_to_ids] + [id for id, in received_from_ids])
+    
+    conversations = []
+    for partner_id in active_partner_ids:
+        partner = User.query.get(partner_id)
+        if not partner:
+            continue
+
+        latest_message = Message.query.filter(
+            or_(
+                and_(Message.sender_id == current_user.id, Message.recipient_id == partner_id, Message.deleted_by_sender == False),
+                and_(Message.sender_id == partner_id, Message.recipient_id == current_user.id, Message.deleted_by_recipient == False)
+            )
+        ).order_by(Message.timestamp.desc()).first()
+
+        unread_count = Message.query.filter(
+            Message.sender_id == partner_id,
+            Message.recipient_id == current_user.id,
+            Message.is_read == False,
+            Message.deleted_by_recipient == False
+        ).count()
+
+        if latest_message:
+            conversations.append({
+                'partner': partner,
+                'latest_message': latest_message,
+                'unread_count': unread_count
+            })
+    
+    conversations.sort(key=lambda c: c['latest_message'].timestamp, reverse=True)
+
+    return render_template("messages.html", title="Inbox", conversations=conversations, pending_deliveries_count=pending_deliveries_count)
 
 # ---> HERE IS THE MISSING ROUTE! <---
 @bp.route("/chat/<int:user_id>")
@@ -395,6 +418,14 @@ def mark_delivered(order_id):
 @bp.route("/api/chat/<int:user_id>")
 @login_required
 def api_get_chat(user_id):
+    # Mark messages from this partner as read by the current user
+    Message.query.filter(
+        Message.sender_id == user_id,
+        Message.recipient_id == current_user.id,
+        Message.is_read == False
+    ).update({'is_read': True})
+    db.session.commit()
+
     chat_history = Message.query.filter(
         or_(
             and_(Message.sender_id == current_user.id, Message.recipient_id == user_id, Message.deleted_by_sender == False),
@@ -462,7 +493,7 @@ def api_send_message(user_id):
     message_body = data.get("message")
     
     if message_body:
-        msg = Message(sender_id=current_user.id, recipient_id=user_id, body=message_body)
+        msg = Message(sender_id=current_user.id, recipient_id=user_id, body=message_body, is_read=False)
         db.session.add(msg)
         db.session.commit()
         return jsonify({"status": "success"})
