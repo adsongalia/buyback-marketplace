@@ -118,6 +118,7 @@ class Message(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     body = db.Column(db.String(500), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, default=False)
     
     # NEW: Soft-Delete Flags
     deleted_by_sender = db.Column(db.Boolean, default=False)

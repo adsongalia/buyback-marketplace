@@ -5,24 +5,28 @@
         <h2 class="text-white fw-bolder mb-4 text-uppercase text-center" style="letter-spacing: 1px;"><i class="fas fa-inbox text-cyan me-2"></i> Your Inbox</h2>
         <div class="card border-0 shadow-lg" style="background-color: var(--bg-card); overflow: hidden;">
             
-            {% for u in other_users %}
-            <a href="{{ url_for('main.chat', user_id=u.id) }}" class="text-decoration-none">
+            {% for conversation in conversations %}
+            <a href="{{ url_for('main.chat', user_id=conversation.partner.id) }}" class="text-decoration-none">
                 <div class="d-flex p-4 border-bottom align-items-center card-hover" style="border-color: var(--border-color) !important; transition: background 0.2s;">
                     <div class="rounded-circle d-flex justify-content-center align-items-center me-4 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: #00e5ff; font-size: 1.5rem; font-weight: bold;">
-                        {{ u.dota2_username[0]|upper }}
+                        {{ conversation.partner.dota2_username[0]|upper }}
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h5 class="text-white fw-bold m-0">{{ u.dota2_username }}</h5>
-                            <span class="badge bg-primary">Open Chat</span>
+                            <h5 class="text-white fw-bold m-0">{{ conversation.partner.dota2_username }}</h5>
+                            {% if conversation.unread_count > 0 %}
+                                <span class="badge bg-danger rounded-pill px-3 py-2 fw-bold">{{ conversation.unread_count }} New</span>
+                            {% endif %}
                         </div>
-                        <p class="m-0" style="color: #94a3b8;">Click to view active conversation...</p>
+                        <p class="m-0" style="color: #94a3b8;">
+                            {% if conversation.latest_message %}{{ conversation.latest_message.body[:50] }}{% if conversation.latest_message.body|length > 50 %}...{% endif %}{% else %}Start a conversation...{% endif %}
+                        </p>
                     </div>
                 </div>
             </a>
             {% endfor %}
-            
-            {% if not other_users %}
+
+            {% if not conversations %}
                 <div class="p-5 text-center">
                     <i class="fas fa-envelope-open-text mb-4" style="font-size: 5rem; color: #3b4b6b;"></i>
                     <h3 class="text-white fw-bold mb-3">No active conversations.</h3>

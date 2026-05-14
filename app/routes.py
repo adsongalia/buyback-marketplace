@@ -95,6 +95,10 @@ def google_auth():
         flash("Welcome! Please complete your profile by setting your Dota 2 username and Steam ID.", "info")
         return redirect(url_for('main.edit_profile'))
 
+    if not user.dota2_username or not user.steam_id:
+        flash("Welcome back! We noticed your profile is incomplete. Please take a moment to update it.", "info")
+        return redirect(url_for('main.edit_profile'))
+        
     return redirect(url_for('main.index'))
 
 @bp.route("/logout")
