@@ -28,7 +28,7 @@
 
                 <div class="mb-5">
                     {{ form.current_password.label(class="form-label text-cyan") }} 
-                    {{ form.current_password(class="form-control") }}
+                    {{ form.current_password(class="form-control", placeholder="Required to change email") }}
                     {% for error in form.current_password.errors %}<div class="text-danger small mt-1 fw-bold">{{ error }}</div>{% endfor %}
                 </div>
                 
