@@ -19,6 +19,9 @@ oauth = OAuth(app)                # NEW
 # NEW: Supabase Initialization
 url: str = app.config.get("SUPABASE_URL")
 key: str = app.config.get("SUPABASE_KEY")
+if not url or not key:
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in the environment.")
+
 supabase: Client = create_client(url, key)
 app.config['SUPABASE_CLIENT'] = supabase
 app.config['SUPABASE_BUCKET'] = "product-images" # The bucket name you created
