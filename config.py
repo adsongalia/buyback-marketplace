@@ -4,9 +4,7 @@ from sqlalchemy.pool import NullPool
 
 # Find the absolute path of the directory containing this file
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Load the .env file from the project root (one level up from config.py)
-project_root = os.path.abspath(os.path.join(basedir, os.pardir))
-load_dotenv(os.path.join(project_root, '.env'))
+load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
     """Set Flask configuration variables from .env file."""

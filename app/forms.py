@@ -2,7 +2,8 @@ from flask_wtf import FlaskForm
 # NEW: Import file handling fields
 from flask_wtf.file import MultipleFileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, FloatField, IntegerField, SelectField, TextAreaField
-from wtforms.validators import DataRequired, Email, EqualTo, Optional
+from wtforms.validators import DataRequired, Email, EqualTo, Optional, ValidationError
+from app.models import User
 
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
@@ -16,6 +17,12 @@ class RegistrationForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"}) 
     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo('password')], render_kw={"class": "form-control bg-dark text-light border-secondary"}) 
     submit = SubmitField("Register Account", render_kw={"class": "btn btn-primary w-100 rounded-pill fw-bold"}) #
+
+    def validate_email(self, email):
+        """Custom validator to check for email uniqueness."""
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('That email is already registered. Please use a different one.')
 
 class ProductForm(FlaskForm):
     name = StringField("Product Name", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"}) 
@@ -35,7 +42,7 @@ class EditProfileForm(FlaskForm):
     dota2_username = StringField("Dota 2 Username", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
     steam_id = StringField("Steam ID", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
     email = StringField("Email", validators=[DataRequired(), Email()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
-    current_password = PasswordField("Current Password", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
+    current_password = PasswordField("Current Password (only required to change email)", validators=[Optional()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
     submit = SubmitField("Save Changes", render_kw={"class": "btn btn-primary w-100 rounded-pill fw-bold"})
 
 class ChangePasswordForm(FlaskForm):

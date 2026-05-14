@@ -18,9 +18,9 @@
                 <span class="text-white fs-5">{{ user.email }}</span>
             </div>
             <div class="text-center mt-4">
-                <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary px-4 py-2 fw-bold shadow-sm"><i class="fas fa-user-edit me-2"></i> Edit Profile Settings</a>
-                <a href="{{ url_for('change_password') }}" class="btn btn-outline-info px-4 py-2 fw-bold shadow-sm"><i class="fas fa-key me-2"></i> Change Password</a>
-                <a href="{{ url_for('my_listings') }}" class="btn btn-outline-warning px-4 py-2 fw-bold shadow-sm"><i class="fas fa-tags me-2"></i> Manage Listings</a>
+                <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary px-4 py-2 fw-bold shadow-sm"><i class="fas fa-user-edit me-2"></i> Edit Profile Settings</a>
+                <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-info px-4 py-2 fw-bold shadow-sm"><i class="fas fa-key me-2"></i> Change Password</a>
+                <a href="{{ url_for('main.my_listings') }}" class="btn btn-outline-warning px-4 py-2 fw-bold shadow-sm"><i class="fas fa-tags me-2"></i> Manage Listings</a>
             </div>
             {% endif %}
         </div>

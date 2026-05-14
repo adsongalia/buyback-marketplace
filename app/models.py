@@ -20,6 +20,29 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    @classmethod
+    def find_or_create_from_google(cls, user_info):
+        """Finds an existing user or creates a new one from Google OAuth info."""
+        google_sub = user_info['sub']
+        user_email = user_info['email']
+
+        # Find user by Google ID first
+        user = cls.query.filter_by(google_sub=google_sub).first()
+        if user:
+            return user, False  # Return user and "was not created" flag
+
+        # If not found, find by email to link accounts
+        user = cls.query.filter_by(email=user_email).first()
+        if user:
+            user.google_sub = google_sub
+            return user, False # Return user and "was not created" flag
+
+        # If no user found, create a new one
+        new_username = user_info.get('name', user_email.split('@')[0])
+        user = cls(email=user_email, google_sub=google_sub, dota2_username=new_username)
+        return user, True # Return user and "was created" flag
+
+
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
@@ -35,12 +58,25 @@ class Product(db.Model):
     description = db.Column(db.Text)
     
     # NEW: Link product to the seller
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) 
     seller = db.relationship('User', backref=db.backref('my_products', lazy=True))
 
     # Relationships
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade="all, delete-orphan")
     price_history = db.relationship('PriceHistory', backref='product', lazy=True, cascade="all, delete-orphan")
+
+    def get_first_image_url(self):
+        if not self.images:
+            return None
+        # Assumes IMAGE_BASE_URL is available in the app's Jinja env
+        from flask import current_app
+        base_url = current_app.jinja_env.globals.get('IMAGE_BASE_URL', '')
+        return f"{base_url}/{self.images[0].image_path}"
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name, "price": self.price,
+                "rarity": self.rarity, "status": self.status, "quantity": self.quantity,
+                "image_url": self.get_first_image_url()}
 
     def __repr__(self):
         return f"<Product {self.name}>"
@@ -67,6 +103,13 @@ class CartItem(db.Model):
 
     user = db.relationship('User', backref=db.backref('cart_items', lazy=True))
     product = db.relationship('Product')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "quantity": self.quantity,
+            "product": self.product.to_dict()
+        }
 
 class Message(db.Model):
     __tablename__ = 'messages'

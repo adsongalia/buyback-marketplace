@@ -1,122 +1,124 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask import render_template, flash, redirect, url_for, request, jsonify, current_app, Blueprint
 from flask_login import current_user, login_user, logout_user, login_required
 from sqlalchemy import or_, and_
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from app import app, db
-from app import oauth
+from app import db, oauth
 from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm, ChangePasswordForm
 from app.models import User, Product, CartItem, Message, ProductImage, PriceHistory, Order
 
-@app.route("/")
-@app.route("/index")
+bp = Blueprint('main', __name__)
+
+def _upload_image_to_storage(file_storage):
+    """
+    Uploads a file to the configured object storage (Supabase Storage) and returns the path.
+    Returns None if the file is invalid or an error occurs.
+    """
+    if not file_storage or file_storage.filename == '':
+        return None
+
+    try:
+        supabase_client = current_app.config['SUPABASE_CLIENT']
+        bucket_name = current_app.config['SUPABASE_BUCKET']
+        
+        _, ext = os.path.splitext(file_storage.filename)
+        file_path = f"public/{uuid.uuid4()}{ext.lower()}"
+        
+        file_bytes = file_storage.read()
+        # Rewind the file pointer in case it needs to be read again
+        file_storage.seek(0)
+        supabase_client.storage.from_(bucket_name).upload(
+            path=file_path, file=file_bytes, file_options={"content-type": file_storage.content_type}
+        )
+        return file_path
+    except Exception as e:
+        current_app.logger.error(f"Supabase upload failed: {e}")
+        return None
+
+@bp.route("/")
+@bp.route("/index")
 def index():
     products = Product.query.all()
     return render_template("index.html", title="Home", products=products)
 
-@app.route("/register", methods=["GET", "POST"])
+@bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
         
     form = RegistrationForm()
     if form.validate_on_submit():
-        
-        # NEW FIX: Check if the email is already in the database first!
-        existing_user = User.query.filter_by(email=form.email.data).first()
-        if existing_user:
-            flash("That email is already registered. Please log in instead.", "danger")
-            return redirect(url_for('register'))
-            
-        # If the email is unique, proceed with creating the account
         user = User(email=form.email.data, dota2_username=form.dota2_username.data, steam_id=form.steam_id.data if form.steam_id.data else None)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        
         flash("Your account has been created successfully.", "success")
-        return redirect(url_for('login'))
+        return redirect(url_for('main.login'))
         
     return render_template("register.html", title="Sign Up", form=form)
 
-@app.route("/login", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
             flash("Invalid email or password", "danger")
-            return redirect(url_for('login'))
+            return redirect(url_for('main.login'))
         login_user(user) 
         flash("You have been logged in successfully.", "success")
-        return redirect(url_for("index"))
+        return redirect(url_for("main.index"))
     return render_template("login.html", title="Log In", form=form)
 
-@app.route("/google/login")
+@bp.route("/google/login")
 def google_login():
-    redirect_uri = url_for('google_auth', _external=True)
+    redirect_uri = url_for('main.google_auth', _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
-@app.route("/google/auth")
+@bp.route("/google/auth")
 def google_auth():
     token = oauth.google.authorize_access_token()
     user_info = oauth.google.userinfo()
-    google_sub = user_info['sub']
-    user_email = user_info['email']
 
-    # Find user by Google ID
-    user = User.query.filter_by(google_sub=google_sub).first()
+    user, was_created = User.find_or_create_from_google(user_info)
 
-    if not user:
-        # If not found, find by email to link accounts
-        user = User.query.filter_by(email=user_email).first()
-        if user:
-            # Link existing account
-            user.google_sub = google_sub
-            db.session.commit()
-        else:
-            # Create a new user
-            new_username = user_info.get('name', user_email.split('@')[0])
-            user = User(
-                email=user_email,
-                google_sub=google_sub,
-                dota2_username=new_username
-            )
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            flash("Welcome! Please complete your profile by setting your Dota 2 username and Steam ID.", "info")
-            return redirect(url_for('edit_profile'))
-
+    if was_created:
+        db.session.add(user)
+    
+    db.session.commit()
     login_user(user)
-    # If an existing user logs in via Google but hasn't set their username, prompt them.
+
+    if was_created:
+        flash("Welcome! Please complete your profile by setting your Dota 2 username and Steam ID.", "info")
+        return redirect(url_for('main.edit_profile'))
+
     if not user.dota2_username or not user.steam_id:
         flash("Welcome back! We noticed your profile is incomplete. Please take a moment to update it.", "info")
-        return redirect(url_for('edit_profile'))
+        return redirect(url_for('main.edit_profile'))
         
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))
 
-@app.route("/logout")
+@bp.route("/logout")
 def logout():
     logout_user()
     flash("You have been successfully logged out.", "info")
-    return redirect(url_for("index"))
+    return redirect(url_for("main.index"))
 
-@app.route("/profile")
+@bp.route("/profile")
 @login_required
 def profile():
     return render_template("profile.html", title="Profile", user=current_user)
 
-@app.route("/my_listings")
+@bp.route("/my_listings")
 @login_required
 def my_listings():
     my_listings = Product.query.filter_by(user_id=current_user.id).order_by(Product.id.desc()).all()
     return render_template("my_listings.html", title="My Listings", my_listings=my_listings)
 
-@app.route("/add_product", methods=["GET", "POST"])
+@bp.route("/add_product", methods=["GET", "POST"])
 @login_required
 def add_product():
     form = ProductForm()
@@ -137,43 +139,28 @@ def add_product():
         # Handle file uploads
         uploaded_files = request.files.getlist('images') # Use 'images' as the field name
         for file in uploaded_files:
-            if file and file.filename != '':
-                # Generate a unique path for the object in the bucket
-                _, ext = os.path.splitext(file.filename)
-                file_path = f"public/{uuid.uuid4()}{ext.lower()}"
-                
-                # Upload to Supabase Storage
-                supabase_client = app.config['SUPABASE_CLIENT']
-                bucket_name = app.config['SUPABASE_BUCKET']
-                file_bytes = file.read()
-                supabase_client.storage.from_(bucket_name).upload(
-                    path=file_path,
-                    file=file_bytes,
-                    file_options={"content-type": file.content_type}
-                )
-
-                # Save the path to the database (NOT the full URL)
-                # The model was changed from image_filename to image_path
-                new_image = ProductImage(image_path=file_path, product=new_product)
+            image_path = _upload_image_to_storage(file)
+            if image_path:
+                new_image = ProductImage(image_path=image_path, product=new_product)
                 db.session.add(new_image)
 
         db.session.commit()
         flash("Your product has been listed successfully.", "success")
-        return redirect(url_for("my_listings")) # Redirect to my_listings after adding
+        return redirect(url_for("main.my_listings")) # Redirect to my_listings after adding
     return render_template("add_product.html", title="Sell Item", form=form)
 
-@app.route("/delete_product/<int:product_id>", methods=["POST"])
+@bp.route("/delete_product/<int:product_id>", methods=["POST"])
 @login_required
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     if product.user_id != current_user.id: # Ensure current_user is the owner
         flash("You cannot delete someone else's product!", "danger")
-        return redirect(url_for('my_listings'))
+        return redirect(url_for('main.my_listings'))
 
     # Delete associated images from Supabase Storage
     try:
-        supabase_client = app.config['SUPABASE_CLIENT']
-        bucket_name = app.config['SUPABASE_BUCKET']
+        supabase_client = current_app.config['SUPABASE_CLIENT']
+        bucket_name = current_app.config['SUPABASE_BUCKET']
         paths_to_remove = [image.image_path for image in product.images]
         if paths_to_remove:
             supabase_client.storage.from_(bucket_name).remove(paths_to_remove)
@@ -185,9 +172,9 @@ def delete_product(product_id):
     db.session.delete(product)
     db.session.commit()
     flash(f"'{product.name}' has been successfully deleted.", "success")
-    return redirect(url_for('my_listings'))
+    return redirect(url_for('main.my_listings'))
 
-@app.route("/product/<int:product_id>")
+@bp.route("/product/<int:product_id>")
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
 
@@ -208,20 +195,21 @@ def product_detail(product_id):
                            is_cheapest=is_cheapest
                           )
 
-@app.route("/edit_profile", methods=["GET", "POST"])
+@bp.route("/edit_profile", methods=["GET", "POST"])
 @login_required
 def edit_profile():
     form = EditProfileForm()
     if form.validate_on_submit():
-        # Check if the new email is different and if it's already taken
-        if form.email.data != current_user.email and User.query.filter_by(email=form.email.data).first(): # Check for duplicate email
-            flash("This email address is already registered. Please use a different one or log in.", "danger")
-            return render_template("edit_profile.html", title="Edit Profile", form=form)
-
-        # NEW: Check current password for confirmation
-        if not current_user.check_password(form.current_password.data):
-            flash("Incorrect current password. Please verify your password and try again.", "danger")
-            return render_template("edit_profile.html", title="Edit Profile", form=form)
+        # If the user is changing their email, we MUST validate their password.
+        if form.email.data != current_user.email:
+            # Check if the new email is already taken
+            if User.query.filter_by(email=form.email.data).first():
+                flash("This email address is already registered. Please use a different one.", "danger")
+                return render_template("edit_profile.html", title="Edit Profile", form=form)
+            # Require current password to change email
+            if not form.current_password.data or not current_user.check_password(form.current_password.data):
+                flash("Incorrect password. You must provide your current password to change your email address.", "danger")
+                return render_template("edit_profile.html", title="Edit Profile", form=form)
 
         current_user.dota2_username = form.dota2_username.data
         current_user.steam_id = form.steam_id.data
@@ -229,7 +217,7 @@ def edit_profile():
 
         db.session.commit()
         flash("Your profile changes have been saved successfully.", "success")
-        return redirect(url_for("profile"))
+        return redirect(url_for("main.profile"))
 
     elif request.method == "GET":
         form.dota2_username.data = current_user.dota2_username
@@ -237,7 +225,7 @@ def edit_profile():
         form.email.data = current_user.email
     return render_template("edit_profile.html", title="Edit Profile", form=form)
 
-@app.route("/change_password", methods=["GET", "POST"])
+@bp.route("/change_password", methods=["GET", "POST"])
 @login_required
 def change_password():
     form = ChangePasswordForm()
@@ -253,20 +241,20 @@ def change_password():
         current_user.set_password(form.new_password.data)
         db.session.commit()
         flash("Your password has been updated successfully.", "success")
-        return redirect(url_for("profile"))
+        return redirect(url_for("main.profile"))
 
     return render_template("change_password.html", title="Change Password", form=form)
 
 
 
-@app.route("/add_to_cart/<int:product_id>")
+@bp.route("/add_to_cart/<int:product_id>", methods=["POST"])
 @login_required
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
     
     if product.quantity <= 0:
         flash(f"Sorry, {product.name} is currently out of stock.", "danger")
-        return redirect(url_for('index', _anchor='market-grid'))
+        return redirect(url_for('main.index', _anchor='market-grid'))
 
     cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
     
@@ -283,16 +271,16 @@ def add_to_cart(product_id):
         db.session.commit()
         flash(f"'{product.name}' has been added to your cart.", "success")
         
-    return redirect(url_for('index', _anchor='market-grid'))
+    return redirect(url_for('main.index', _anchor='market-grid'))
 
-@app.route("/cart")
+@bp.route("/cart")
 @login_required
 def cart():
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     return render_template("cart.html", title="Your Cart", cart_items=cart_items, total_price=total_price)
 
-@app.route("/remove_from_cart/<int:cart_item_id>")
+@bp.route("/remove_from_cart/<int:cart_item_id>")
 @login_required
 def remove_from_cart(cart_item_id):
     cart_item = CartItem.query.get_or_404(cart_item_id)
@@ -300,9 +288,9 @@ def remove_from_cart(cart_item_id):
         db.session.delete(cart_item)
         db.session.commit()
         flash("Item removed from cart.", "info")
-    return redirect(url_for('cart'))
+    return redirect(url_for('main.cart'))
 
-@app.route("/checkout", methods=["GET", "POST"])
+@bp.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
     buy_now_product_id = request.args.get('buy_now_product_id', type=int)
@@ -310,15 +298,16 @@ def checkout():
     if buy_now_product_id:
         # --- Buy Now Logic ---
         product = Product.query.get_or_404(buy_now_product_id)
-        # Create a temporary, non-db object for display purposes
-        cart_items = [{"product": product, "quantity": 1}]
+        # Create a temporary CartItem object (not saved to DB) for consistent template logic
+        buy_now_item = CartItem(product=product, quantity=1)
+        cart_items = [buy_now_item]
         total_price = product.price
     else:
         # --- Standard Cart Checkout Logic ---
         cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
         if not cart_items:
             flash("Your cart is empty!", "warning")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         total_price = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == "POST":
@@ -327,7 +316,7 @@ def checkout():
             product_to_buy = Product.query.get_or_404(buy_now_product_id)
             if product_to_buy.quantity < 1:
                 flash(f"Sorry, {product_to_buy.name} is out of stock.", "danger")
-                return redirect(url_for('product_detail', product_id=product_to_buy.id))
+                return redirect(url_for('main.product_detail', product_id=product_to_buy.id))
             
             # Create an Order record
             new_order = Order(
@@ -342,44 +331,51 @@ def checkout():
             product_to_buy.quantity -= 1
             db.session.commit()
             flash(f"Your order for ₱{product_to_buy.price:,.2f} has been placed successfully. The seller has been notified.", "success")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         else:
             # --- Finalize Standard Cart ---
-            # Re-check stock before finalizing purchase
-            cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).all()
-            
-            # Check stock for all items first
-            out_of_stock_items = []
-            for item in cart_items_from_db:
-                if item.product.quantity < item.quantity:
-                    out_of_stock_items.append(item.product.name)
-            
-            if out_of_stock_items:
-                flash(f"Sorry, the quantity for some items has changed: {', '.join(out_of_stock_items)}. Please review your cart.", "danger")
-                return redirect(url_for('cart'))
+            try:
+                # Re-query items within the transaction for safety
+                cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).all()
+                
+                # Check stock for all items first
+                out_of_stock_items = []
+                for item in cart_items_from_db:
+                    # Lock the product row for update to prevent race conditions
+                    product = Product.query.with_for_update().get(item.product_id)
+                    if product.quantity < item.quantity:
+                        out_of_stock_items.append(product.name)
+                
+                if out_of_stock_items:
+                    # This will trigger the rollback in the except block
+                    raise ValueError(f"Sorry, the quantity for some items has changed: {', '.join(out_of_stock_items)}. Please review your cart.")
 
-            # If all stock is good, proceed with creating orders and updating quantities
-            for item in cart_items_from_db:
-                # Create an Order record for each item
-                new_order = Order(
-                    buyer_id=current_user.id,
-                    seller_id=item.product.user_id,
-                    product_id=item.product.id,
-                    quantity=item.quantity,
-                    price_at_purchase=item.product.price,
-                    delivery_status='Pending'
-                )
-                db.session.add(new_order)
-                item.product.quantity -= item.quantity
-                db.session.delete(item)
-            
-            db.session.commit()
-            flash(f"Your order for ₱{total_price:,.2f} has been placed successfully. Sellers have been notified.", "success")
-            return redirect(url_for('index'))
+                # If all stock is good, proceed with creating orders and updating quantities
+                for item in cart_items_from_db:
+                    # Create an Order record for each item
+                    new_order = Order(
+                        buyer_id=current_user.id,
+                        seller_id=item.product.user_id,
+                        product_id=item.product.id,
+                        quantity=item.quantity,
+                        price_at_purchase=item.product.price,
+                        delivery_status='Pending'
+                    )
+                    db.session.add(new_order)
+                    item.product.quantity -= item.quantity
+                    db.session.delete(item)
+                
+                db.session.commit()
+                flash(f"Your order for ₱{total_price:,.2f} has been placed successfully. Sellers have been notified.", "success")
+                return redirect(url_for('main.index'))
+            except Exception as e:
+                db.session.rollback()
+                flash(str(e), "danger")
+                return redirect(url_for('main.cart'))
         
     return render_template("checkout.html", title="Checkout", total_price=total_price, cart_items=cart_items)
 
-@app.route("/messages")
+@bp.route("/messages")
 @login_required
 def messages():
     # Also fetch pending deliveries for the current user as a seller
@@ -405,34 +401,34 @@ def messages():
     return render_template("messages.html", title="Inbox", other_users=other_users, pending_deliveries_count=pending_deliveries_count)
 
 # ---> HERE IS THE MISSING ROUTE! <---
-@app.route("/chat/<int:user_id>")
+@bp.route("/chat/<int:user_id>")
 @login_required
 def chat(user_id):
     """Renders the Vue.js chat room UI."""
     chat_partner = User.query.get_or_404(user_id)
     return render_template("chat.html", title=f"Chat with {chat_partner.dota2_username}", chat_partner=chat_partner)
 
-@app.route("/seller_deliveries")
+@bp.route("/seller_deliveries")
 @login_required
 def seller_deliveries():
     # Get all orders where the current user is the seller and delivery is pending
     pending_deliveries = Order.query.filter_by(seller_id=current_user.id, delivery_status='Pending').order_by(Order.order_date.asc()).all()
     return render_template("seller_deliveries.html", title="Pending Deliveries", deliveries=pending_deliveries)
 
-@app.route("/mark_delivered/<int:order_id>", methods=["POST"])
+@bp.route("/mark_delivered/<int:order_id>", methods=["POST"])
 @login_required
 def mark_delivered(order_id):
     order = Order.query.get_or_404(order_id)
     if order.seller_id != current_user.id:
         flash("You are not authorized to mark this order as delivered.", "danger")
-        return redirect(url_for('seller_deliveries'))
+        return redirect(url_for('main.seller_deliveries'))
 
     order.delivery_status = 'Delivered'
     db.session.commit()
     flash(f"Order {order.id} for {order.product.name} marked as delivered.", "success")
-    return redirect(url_for('seller_deliveries'))
+    return redirect(url_for('main.seller_deliveries'))
 
-@app.route("/api/chat/<int:user_id>")
+@bp.route("/api/chat/<int:user_id>")
 @login_required
 def api_get_chat(user_id):
     chat_history = Message.query.filter(
@@ -452,20 +448,13 @@ def api_get_chat(user_id):
         })
     return jsonify(messages_data)
 
-@app.route("/api/products")
+@bp.route("/api/products")
 def api_products():
     products = Product.query.all()
-    product_list = []
-    for p in products:
-        product_list.append({
-            "id": p.id, "name": p.name, "price": p.price,
-            "rarity": p.rarity, "status": p.status, 
-            "quantity": p.quantity,
-            "images": f"{app.jinja_env.globals['IMAGE_BASE_URL']}/{p.images[0].image_path}" if p.images else None
-        })
-    return jsonify(product_list)
+    # Use a list comprehension and the new to_dict() method
+    return jsonify([p.to_dict() for p in products])
 
-@app.route("/api/add_to_cart/<int:product_id>", methods=["POST"])
+@bp.route("/api/add_to_cart/<int:product_id>", methods=["POST"])
 @login_required
 def api_add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
@@ -486,27 +475,13 @@ def api_add_to_cart(product_id):
         db.session.commit()
         return jsonify({"status": "success", "message": f"{product.name} added to cart!"})
     
-@app.route("/api/cart")
+@bp.route("/api/cart")
 @login_required
 def api_cart():
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-    cart_list = []
-    for item in cart_items:
-        cart_list.append({
-            "id": item.id,
-            "quantity": item.quantity,
-            "product": {
-                "id": item.product.id,
-                "name": item.product.name,
-                "price": item.product.price,
-                "rarity": item.product.rarity,
-                # Use the first available image, or None if there are no images for display in cart
-                "image_url": f"{app.jinja_env.globals['IMAGE_BASE_URL']}/{item.product.images[0].image_path}" if item.product.images else None
-            }
-        })
-    return jsonify(cart_list)
+    return jsonify([item.to_dict() for item in cart_items])
 
-@app.route("/api/remove_from_cart/<int:cart_item_id>", methods=["POST"])
+@bp.route("/api/remove_from_cart/<int:cart_item_id>", methods=["POST"])
 @login_required
 def api_remove_from_cart(cart_item_id):
     cart_item = CartItem.query.get_or_404(cart_item_id)
@@ -516,7 +491,7 @@ def api_remove_from_cart(cart_item_id):
         return jsonify({"status": "success", "message": "Item successfully removed from your cart."})
     return jsonify({"status": "error", "message": "Unauthorized access."}), 403
 
-@app.route("/api/chat/<int:user_id>/send", methods=["POST"])
+@bp.route("/api/chat/<int:user_id>/send", methods=["POST"])
 @login_required
 def api_send_message(user_id):
     data = request.get_json()
@@ -530,14 +505,14 @@ def api_send_message(user_id):
 
     return jsonify({"status": "error", "message": "Cannot send empty message"})
 
-@app.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
+@bp.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
 @login_required
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
     
     if product.user_id != current_user.id: # Ensure current_user is the owner
         flash("You cannot edit someone else's product!", "danger")
-        return redirect(url_for('my_listings'))
+        return redirect(url_for('main.my_listings'))
 
     form = ProductForm()
     
@@ -557,26 +532,14 @@ def edit_product(product_id):
         # Handle new image uploads during edit
         uploaded_files = request.files.getlist(form.images.name)
         for file in uploaded_files:
-            if file and file.filename != '': # Process new image uploads
-                _, ext = os.path.splitext(file.filename)
-                file_path = f"public/{uuid.uuid4()}{ext.lower()}"
-
-                # Upload to Supabase Storage
-                supabase_client = app.config['SUPABASE_CLIENT']
-                bucket_name = app.config['SUPABASE_BUCKET']
-                file_bytes = file.read()
-                supabase_client.storage.from_(bucket_name).upload(
-                    path=file_path,
-                    file=file_bytes,
-                    file_options={"content-type": file.content_type}
-                )
-
-                new_image = ProductImage(image_path=file_path, product=product)
+            image_path = _upload_image_to_storage(file)
+            if image_path:
+                new_image = ProductImage(image_path=image_path, product=product)
                 db.session.add(new_image)
 
         db.session.commit()
         flash(f"{product.name} has been updated successfully.", "success")
-        return redirect(url_for('my_listings'))
+        return redirect(url_for('main.my_listings'))
         
     elif request.method == "GET":
         form.name.data = product.name
@@ -588,7 +551,7 @@ def edit_product(product_id):
 
     return render_template("edit_product.html", title="Edit Item", form=form, product=product)
 
-@app.route("/delete_product_image/<int:image_id>", methods=["POST"])
+@bp.route("/delete_product_image/<int:image_id>", methods=["POST"])
 @login_required
 def delete_product_image(image_id):
     image_to_delete = ProductImage.query.get_or_404(image_id)
@@ -599,8 +562,8 @@ def delete_product_image(image_id):
 
     try:
         # Delete the file from Supabase Storage
-        supabase_client = app.config['SUPABASE_CLIENT']
-        bucket_name = app.config['SUPABASE_BUCKET']
+        supabase_client = current_app.config['SUPABASE_CLIENT']
+        bucket_name = current_app.config['SUPABASE_BUCKET']
         # The image_path is stored in the database
         path_to_remove = image_to_delete.image_path
         supabase_client.storage.from_(bucket_name).remove([path_to_remove])
@@ -613,7 +576,7 @@ def delete_product_image(image_id):
         db.session.rollback()
         return jsonify({"status": "error", "message": f"Failed to delete image: {str(e)}"}), 500
 
-@app.route("/api/chat/delete_conversation/<int:partner_id>", methods=["POST"])
+@bp.route("/api/chat/delete_conversation/<int:partner_id>", methods=["POST"])
 @login_required
 def api_delete_conversation(partner_id):
     chat_history = Message.query.filter(
@@ -635,7 +598,7 @@ def api_delete_conversation(partner_id):
     db.session.commit()
     return jsonify({"status": "success", "message": "Conversation history cleared successfully."})
 
-@app.route("/api/update_cart/<int:cart_item_id>", methods=["POST"])
+@bp.route("/api/update_cart/<int:cart_item_id>", methods=["POST"])
 @login_required
 def api_update_cart(cart_item_id):
     data = request.get_json()

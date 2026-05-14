@@ -6,7 +6,7 @@
         <div class="card border-0 shadow-lg" style="background-color: var(--bg-card); overflow: hidden;">
             
             {% for u in other_users %}
-            <a href="{{ url_for('chat', user_id=u.id) }}" class="text-decoration-none">
+            <a href="{{ url_for('main.chat', user_id=u.id) }}" class="text-decoration-none">
                 <div class="d-flex p-4 border-bottom align-items-center card-hover" style="border-color: var(--border-color) !important; transition: background 0.2s;">
                     <div class="rounded-circle d-flex justify-content-center align-items-center me-4 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: #00e5ff; font-size: 1.5rem; font-weight: bold;">
                         {{ u.dota2_username[0]|upper }}
@@ -27,7 +27,7 @@
                     <i class="fas fa-envelope-open-text mb-4" style="font-size: 5rem; color: #3b4b6b;"></i>
                     <h3 class="text-white fw-bold mb-3">No active conversations.</h3>
                     <p class="mb-4 fs-5" style="color: #94a3b8;">Visit the marketplace and message a seller to start chatting!</p>
-                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-5 fw-bold shadow-sm">Browse Market</a>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg px-5 fw-bold shadow-sm">Browse Market</a>
                 </div>
             {% endif %}
             
