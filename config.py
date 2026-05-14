@@ -12,11 +12,10 @@ class Config:
     """Set Flask configuration variables from .env file."""
 
     # General Config
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-default-secret-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # NEW: Add engine options for serverless compatibility
     SQLALCHEMY_ENGINE_OPTIONS = {
