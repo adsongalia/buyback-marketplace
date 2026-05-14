@@ -247,48 +247,12 @@ def change_password():
 
 
 
-@bp.route("/add_to_cart/<int:product_id>", methods=["POST"])
-@login_required
-def add_to_cart(product_id):
-    product = Product.query.get_or_404(product_id)
-    
-    if product.quantity <= 0:
-        flash(f"Sorry, {product.name} is currently out of stock.", "danger")
-        return redirect(url_for('main.index', _anchor='market-grid'))
-
-    cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-    
-    if cart_item:
-        if cart_item.quantity < product.quantity:
-            cart_item.quantity += 1 # Increment quantity if item already in cart
-            db.session.commit()
-            flash(f"The quantity of '{product.name}' in your cart has been updated.", "success")
-        else:
-            flash(f"You cannot add more {product.name}. Max stock reached.", "warning")
-    else:
-        new_cart_item = CartItem(user_id=current_user.id, product_id=product_id)
-        db.session.add(new_cart_item)
-        db.session.commit()
-        flash(f"'{product.name}' has been added to your cart.", "success")
-        
-    return redirect(url_for('main.index', _anchor='market-grid'))
-
 @bp.route("/cart")
 @login_required
 def cart():
     cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     return render_template("cart.html", title="Your Cart", cart_items=cart_items, total_price=total_price)
-
-@bp.route("/remove_from_cart/<int:cart_item_id>")
-@login_required
-def remove_from_cart(cart_item_id):
-    cart_item = CartItem.query.get_or_404(cart_item_id)
-    if cart_item.user_id == current_user.id:
-        db.session.delete(cart_item)
-        db.session.commit()
-        flash("Item removed from cart.", "info")
-    return redirect(url_for('main.cart'))
 
 @bp.route("/checkout", methods=["GET", "POST"])
 @login_required

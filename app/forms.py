@@ -42,7 +42,7 @@ class EditProfileForm(FlaskForm):
     dota2_username = StringField("Dota 2 Username", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
     steam_id = StringField("Steam ID", validators=[DataRequired()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
     email = StringField("Email", validators=[DataRequired(), Email()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
-    current_password = PasswordField("Current Password (only required to change email)", validators=[Optional()], render_kw={"class": "form-control bg-dark text-light border-secondary"})
+    current_password = PasswordField("Current Password (only required to change email)", validators=[Optional()], render_kw={"class": "form-control bg-dark text-light border-secondary", "placeholder": "Required to change email"})
     submit = SubmitField("Save Changes", render_kw={"class": "btn btn-primary w-100 rounded-pill fw-bold"})
 
 class ChangePasswordForm(FlaskForm):
