@@ -21,7 +21,7 @@
                             <div class="carousel-inner h-100">
                                 {% for image in product.images %}
                                 <div class="carousel-item h-100 {% if loop.first %}active{% endif %}">
-                                    <img src="{{ url_for('static', filename='uploads/' + image.image_filename) }}" class="d-block w-100 h-100" style="object-fit: contain;" alt="{{ product.name }}">
+                                    <img src="{{ image.get_public_url() or url_for('static', filename='images/placeholder.png') }}" class="d-block w-100 h-100" style="object-fit: contain;" alt="{{ product.name }}">
                                 </div>
                                 {% endfor %}
                             </div>
@@ -30,7 +30,7 @@
                         {% if len(product.images) > 1 %}
                         <div class="d-flex justify-content-center mt-3 gap-2">
                             {% for image in product.images %}
-                            <img src="{{ url_for('static', filename='uploads/' + image.image_filename) }}" class="rounded" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 2px solid transparent;" data-bs-target="#productImageCarousel" data-bs-slide-to="{{ loop.index0 }}">
+                            <img src="{{ image.get_public_url() or url_for('static', filename='images/placeholder.png') }}" class="rounded" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 2px solid transparent;" data-bs-target="#productImageCarousel" data-bs-slide-to="{{ loop.index0 }}">
                             {% endfor %}
                         </div>
                         {% endif %}

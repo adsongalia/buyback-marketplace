@@ -25,8 +25,8 @@
                 
                 <a :href="'/product/' + product.id" class="text-decoration-none">
                     <div class="position-relative w-100" style="height: 220px; background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
-                        <img v-if="product.images" :src="product.images" class="w-100 h-100" style="object-fit: cover;" :alt="product.name" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="position-absolute top-0 start-0 w-100 h-100 flex-column justify-content-center align-items-center" :style="{ display: product.images ? 'none' : 'flex' }">
+                        <img v-if="product.image_url" :src="product.image_url" class="w-100 h-100" style="object-fit: cover;" :alt="product.name" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="position-absolute top-0 start-0 w-100 h-100 flex-column justify-content-center align-items-center" :style="{ display: product.image_url ? 'none' : 'flex' }">
                             <span style="font-size: 3rem; color: #3b4b6b;">📦</span>
                         </div>
                     </div>

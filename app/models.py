@@ -92,6 +92,18 @@ class ProductImage(db.Model):
     image_path = db.Column(db.String(255), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
 
+    def get_public_url(self):
+        """Generates the full public URL for the image from Supabase Storage."""
+        from flask import current_app
+        try:
+            supabase_client = current_app.config['SUPABASE_CLIENT']
+            bucket_name = current_app.config['SUPABASE_BUCKET']
+            return supabase_client.storage.from_(bucket_name).get_public_url(self.image_path)
+        except Exception as e:
+            # It's good practice to log errors
+            current_app.logger.error(f"Error generating public URL for image path '{self.image_path}': {e}")
+            return None
+
 class PriceHistory(db.Model):
     __tablename__ = "price_history"
     id = db.Column(db.Integer, primary_key=True)
