@@ -88,8 +88,6 @@ def login():
             
         login_user(user) 
         flash("You have been logged in successfully.", "success")
-        if user.is_admin:
-            return redirect(url_for("main.admin_users"))
         return redirect(url_for("main.index"))
     return render_template("login.html", title="Log In", form=form)
 
@@ -124,9 +122,6 @@ def google_auth():
         flash("Welcome back! We noticed your profile is incomplete. Please take a moment to update it.", "info")
         return redirect(url_for('main.edit_profile'))
         
-    if user.is_admin:
-        return redirect(url_for('main.admin_users'))
-
     return redirect(url_for('main.index'))
 
 @bp.route("/logout")
