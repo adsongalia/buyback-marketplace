@@ -6,7 +6,7 @@
             <a href="{{ url_for('main.my_listings') }}" class="btn btn-outline-secondary border-0 position-absolute top-50 start-0 translate-middle-y" style="color: #94a3b8; z-index: 2;"><i class="fas fa-arrow-left"></i></a>
             <div>
                 <h3 class="text-cyan fw-bold text-uppercase m-0" style="letter-spacing: 2px;"><i class="fas fa-pen-nib me-2"></i> Edit Listing</h3>
-                <p class="text-muted mb-0">Updating: <strong class="text-white">{{ product.name }}</strong></p>
+                <p class="mb-0" style="color: #94a3b8;">Updating: <strong class="text-white">{{ product.name }}</strong></p>
             </div>
         </div>
         
@@ -50,7 +50,7 @@
                         {% raw %}
                         <div v-if="currentImages.length > 0" class="d-flex flex-wrap gap-2">
                             <div v-for="image in currentImages" :key="image.id" class="position-relative">
-                                <img :src="'/static/uploads/' + image.image_filename" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                                <img :src="image.url" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" :alt="product.name">
                                 <button @click.prevent="deleteImage(image.id)" 
                                         class="btn btn-danger btn-sm position-absolute top-0 end-0 translate-middle rounded-circle p-0 d-flex align-items-center justify-content-center" 
                                         style="width: 24px; height: 24px; font-size: 0.7rem; z-index: 1;" 
@@ -110,8 +110,8 @@
             const fetchProductImages = async () => {
                 // Assuming you might want to fetch images dynamically,
                 // but for now, we'll initialize from the server-rendered product object.
-                // In a more complex app, you might have an API endpoint for this.
-                currentImages.value = {{ product.images | tojson }};
+                // We now pass a pre-formatted JSON object from the route.
+                currentImages.value = {{ images_json | tojson }};
             };
 
             const deleteImage = async (imageId) => {
