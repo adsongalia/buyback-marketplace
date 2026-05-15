@@ -15,7 +15,11 @@
                 {% endif %}
                 <div>
                     <h4 class="text-white m-0 fw-bold">{{ chat_partner.dota2_username }}</h4>
-                    <small style="color: #10b981;">● Online</small>
+                    {% if chat_partner.is_online() %}
+                        <small style="color: #10b981;">● Online</small>
+                    {% else %}
+                        <small style="color: #94a3b8;">● Offline</small>
+                    {% endif %}
                 </div>
             </div>
             

@@ -12,6 +12,14 @@ from app.models import User, Product, CartItem, Message, ProductImage, PriceHist
 
 bp = Blueprint('main', __name__)
 
+@bp.before_request
+def before_request():
+    if current_user.is_authenticated:
+        now = datetime.utcnow()
+        if not current_user.last_seen or (now - current_user.last_seen).total_seconds() > 60:
+            current_user.last_seen = now
+            db.session.commit()
+
 def _upload_image_to_storage(file_storage):
     """
     Uploads a file to the configured object storage (Supabase Storage) and returns the path.

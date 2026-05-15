@@ -1,7 +1,7 @@
 from app import db, login
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class User(UserMixin, db.Model):
     __tablename__ = "users"
@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
     steam_id = db.Column(db.String(80))
     google_sub = db.Column(db.String(255), unique=True, nullable=True)
     profile_image_path = db.Column(db.String(255), nullable=True)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False)
     purchases = db.relationship('Order', foreign_keys='Order.buyer_id', backref='buyer', lazy='dynamic')
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy='dynamic')
@@ -53,6 +54,11 @@ class User(UserMixin, db.Model):
 
     def cart_item_count(self):
         return sum(item.quantity for item in self.cart_items)
+
+    def is_online(self):
+        if self.last_seen:
+            return datetime.utcnow() - self.last_seen < timedelta(minutes=5)
+        return False
 
     def get_profile_image_url(self):
         if not self.profile_image_path:
