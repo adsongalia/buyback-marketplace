@@ -10,7 +10,7 @@
             </div>
         </div>
         
-        <div id="vue-edit-product" class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);" data-images="{{ images_data | tojson }}">
+        <div id="vue-edit-product" class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);" data-images='{{ images_data | tojson }}'>
             <div v-if="alertMessage" 
                  :class="['alert', 'custom-alert', alertType === 'success' ? 'alert-success-custom' : 'alert-danger-custom', 'shadow-lg', 'd-flex', 'align-items-center']" 
                  style="position: fixed; bottom: 30px; right: 30px; z-index: 1050; padding: 15px 25px; border-radius: 12px; font-weight: 600;">
