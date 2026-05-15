@@ -41,9 +41,8 @@ def create_app(config_class=Config):
         client_kwargs={'scope': 'openid email profile'}
     )
 
-    # Add image base URL to Jinja2 templates
-    image_base_url = f"{url}/storage/v1/object/public/{app.config['SUPABASE_BUCKET']}"
-    app.jinja_env.globals.update(len=len, IMAGE_BASE_URL=image_base_url)
+    # Make len() available in Jinja2 templates
+    app.jinja_env.globals.update(len=len)
 
     from app.routes import bp as main_blueprint
     app.register_blueprint(main_blueprint)

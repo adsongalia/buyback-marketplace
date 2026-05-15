@@ -68,10 +68,15 @@ class Product(db.Model):
     def get_first_image_url(self):
         if not self.images:
             return None
-        # Assumes IMAGE_BASE_URL is available in the app's Jinja env
         from flask import current_app
-        base_url = current_app.jinja_env.globals.get('IMAGE_BASE_URL', '')
-        return f"{base_url}/{self.images[0].image_path}"
+        try:
+            image_path = self.images[0].image_path
+            supabase_client = current_app.config['SUPABASE_CLIENT']
+            bucket_name = current_app.config['SUPABASE_BUCKET']
+            return supabase_client.storage.from_(bucket_name).get_public_url(image_path)
+        except Exception as e:
+            current_app.logger.error(f"Error generating public URL: {e}")
+            return None
 
     def to_dict(self):
         return {"id": self.id, "name": self.name, "price": self.price,

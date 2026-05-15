@@ -18,15 +18,31 @@ from app.models import PriceHistory, Product, ProductImage, User  # noqa
 def seed_database():
     app = create_app()
     with app.app_context():
-        print("Connecting to database...")
+        print("Connecting to services...")
+        
+        # BONUS: Clear the Supabase storage bucket to remove orphaned files
+        try:
+            supabase_client = app.config['SUPABASE_CLIENT']
+            bucket_name = app.config['SUPABASE_BUCKET']
+            print(f"Listing files in bucket '{bucket_name}'...")
+            all_files = supabase_client.storage.from_(bucket_name).list()
+            if all_files:
+                file_paths = [file['name'] for file in all_files]
+                print(f"Deleting {len(file_paths)} files from storage...")
+                supabase_client.storage.from_(bucket_name).remove(file_paths)
+            else:
+                print("Storage bucket is already empty.")
+        except Exception as e:
+            print(f"Warning: Could not clear Supabase bucket. Error: {e}")
+
         # Clear existing data to prevent duplicates and orphaned images
-        print("Clearing existing data...")
+        print("Clearing database tables...")
         ProductImage.query.delete()
         PriceHistory.query.delete()
         Product.query.delete()
         User.query.delete()
         db.session.commit()
-        print("Database cleared. It is now ready for users to populate.")
+        print("Database and storage are now clean.")
 
 if __name__ == "__main__":
     seed_database()
