@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-3 mb-5">
+    <div class="col-md-10 col-lg-8">
+        <div class="card p-5 shadow-lg border-0 mb-4" style="background-color: #151b2b;">
+            <div class="text-center mb-4">
+                {% if seller.get_profile_image_url() %}
+                    <img src="{{ seller.get_profile_image_url() }}" class="rounded-circle shadow-lg" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--accent-cyan);">
+                {% else %}
+                    <div class="rounded-circle d-flex justify-content-center align-items-center mx-auto shadow-lg" style="width: 120px; height: 120px; background-color: var(--border-color); color: var(--accent-cyan); font-size: 3rem; font-weight: bold; border: 3px solid var(--accent-cyan);">
+                        {{ seller.dota2_username[0]|upper if seller.dota2_username else "U" }}
+                    </div>
+                {% endif %}
+            </div>
+            <h3 class="mb-3 fw-bolder text-center text-white">{{ seller.dota2_username }}</h3>
+            <div class="text-center">
+                <div class="text-gold mb-3" style="font-size: 1.2rem; color: var(--accent-gold);">★★★★★ <span class="text-white ms-2 fs-6">Verified Seller</span></div>
+                {% if current_user.is_authenticated and seller.id != current_user.id %}
+                    <a href="{{ url_for('main.chat', user_id=seller.id) }}" class="btn btn-outline-primary px-4 py-2 fw-bold shadow-sm"><i class="fas fa-comment-dots me-2"></i> Message Seller</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <h3 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2 pt-4">Listings from {{ seller.dota2_username }}</h3>
+
+        {% if products %}
+            <div class="row g-4">
+                {% for item in products %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-hover h-100 overflow-hidden">
+                        <a href="{{ url_for('main.product_detail', product_id=item.id) }}" class="text-decoration-none">
+                            <div class="position-relative w-100" style="height: 220px; background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+                                {% if item.get_first_image_url() %}
+                                    <img src="{{ item.get_first_image_url() }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ item.name }}">
+                                {% else %}
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 flex-column justify-content-center align-items-center d-flex">
+                                        <span style="font-size: 3rem; color: #3b4b6b;">📦</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        <div class="card-body d-flex flex-column p-4">
+                            <a href="{{ url_for('main.product_detail', product_id=item.id) }}" class="text-decoration-none">
+                                <h5 class="card-title text-white text-truncate mb-1 card-hover-text" title="{{ item.name }}">{{ item.name }}</h5>
+                            </a>
+                            <h4 class="mb-3 fw-bold" style="color: #00e5ff;">₱{{ "{:,.2f}".format(item.price) }}</h4>
+                            <p class="small mt-auto mb-0 text-white">Stock: <strong class="text-white">{{ item.quantity }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card p-4 text-center border-0" style="background-color: var(--bg-card);">
+                <p class="m-0 text-white">This seller currently has no active listings.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

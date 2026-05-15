@@ -140,6 +140,13 @@ def logout():
 def profile():
     return render_template("profile.html", title="Profile", user=current_user)
 
+@bp.route("/seller/<int:seller_id>")
+def seller_profile(seller_id):
+    seller = User.query.get_or_404(seller_id)
+    # Fetch active listings for this seller
+    products = Product.query.filter_by(user_id=seller.id).order_by(Product.id.desc()).all()
+    return render_template("seller_profile.html", title=f"{seller.dota2_username}'s Profile", seller=seller, products=products)
+
 @bp.route("/my_listings")
 @login_required
 def my_listings():
@@ -501,7 +508,14 @@ def api_get_chat(user_id):
             "body": msg.body,
             "timestamp": msg.timestamp.isoformat() + "Z" # Send full UTC ISO string
         })
-    return jsonify(messages_data)
+        
+    chat_partner = User.query.get(user_id)
+    is_online = chat_partner.is_online() if chat_partner else False
+
+    return jsonify({
+        "messages": messages_data,
+        "is_online": is_online
+    })
 
 @bp.route("/api/user_counts")
 @login_required
