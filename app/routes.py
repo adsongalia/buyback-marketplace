@@ -240,6 +240,21 @@ def edit_profile():
         current_user.steam_id = form.steam_id.data
         current_user.email = form.email.data
 
+        # Handle profile image upload
+        profile_image_file = request.files.get('profile_image')
+        if profile_image_file and profile_image_file.filename != '':
+            image_path = _upload_image_to_storage(profile_image_file)
+            if image_path:
+                # Optionally delete old image from storage here to prevent clutter
+                if current_user.profile_image_path:
+                    try:
+                        supabase_client = current_app.config['SUPABASE_CLIENT']
+                        bucket_name = current_app.config['SUPABASE_BUCKET']
+                        supabase_client.storage.from_(bucket_name).remove([current_user.profile_image_path])
+                    except Exception as e:
+                        current_app.logger.error(f"Could not delete old profile image: {e}")
+                current_user.profile_image_path = image_path
+
         db.session.commit()
         flash("Your profile changes have been saved successfully.", "success")
         return redirect(url_for("main.profile"))

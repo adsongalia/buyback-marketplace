@@ -6,9 +6,13 @@
         <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded shadow-sm" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
             <div class="d-flex align-items-center">
                 <a href="{{ url_for('main.messages') }}" class="btn btn-outline-secondary border-0 me-3 text-white"><i class="fas fa-arrow-left"></i></a>
-                <div class="rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; background-color: var(--border-color); color: #00e5ff; font-weight: bold; font-size: 1.2rem;">
-                    {{ chat_partner.dota2_username[0]|upper if chat_partner.dota2_username else "U" }}
-                </div>
+                {% if chat_partner.get_profile_image_url() %}
+                    <img src="{{ chat_partner.get_profile_image_url() }}" class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover; border: 1px solid var(--accent-cyan);">
+                {% else %}
+                    <div class="rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; background-color: var(--border-color); color: #00e5ff; font-weight: bold; font-size: 1.2rem;">
+                        {{ chat_partner.dota2_username[0]|upper if chat_partner.dota2_username else "U" }}
+                    </div>
+                {% endif %}
                 <div>
                     <h4 class="text-white m-0 fw-bold">{{ chat_partner.dota2_username }}</h4>
                     <small style="color: #10b981;">● Online</small>

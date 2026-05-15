@@ -96,9 +96,13 @@
                     </div>
 
                     <div class="mt-auto pt-4 d-flex align-items-center">
-                        <div class="rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: var(--accent-cyan); font-size: 1.5rem; font-weight: bold; border: 2px solid var(--accent-cyan);">
-                            {{ product.seller.dota2_username[0]|upper if product.seller and product.seller.dota2_username else "B" }}
-                        </div>
+                        {% if product.seller and product.seller.get_profile_image_url() %}
+                            <img src="{{ product.seller.get_profile_image_url() }}" class="rounded-circle me-3 shadow-sm" style="width: 60px; height: 60px; object-fit: cover; border: 2px solid var(--accent-cyan);">
+                        {% else %}
+                            <div class="rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 60px; height: 60px; background-color: var(--border-color); color: var(--accent-cyan); font-size: 1.5rem; font-weight: bold; border: 2px solid var(--accent-cyan);">
+                                {{ product.seller.dota2_username[0]|upper if product.seller and product.seller.dota2_username else "B" }}
+                            </div>
+                        {% endif %}
                         <div>
                             <h5 class="text-white mb-1 fw-bold">{{ product.seller.dota2_username if product.seller else "BUYBACK Official" }}</h5>
                             <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">★★★★★ <span class="text-white" style="margin-left: 5px;">Verified Seller</span></div>

@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     dota2_username = db.Column(db.String(80))
     steam_id = db.Column(db.String(80))
     google_sub = db.Column(db.String(255), unique=True, nullable=True)
+    profile_image_path = db.Column(db.String(255), nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     purchases = db.relationship('Order', foreign_keys='Order.buyer_id', backref='buyer', lazy='dynamic')
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy='dynamic')
@@ -52,6 +53,18 @@ class User(UserMixin, db.Model):
 
     def cart_item_count(self):
         return sum(item.quantity for item in self.cart_items)
+
+    def get_profile_image_url(self):
+        if not self.profile_image_path:
+            return None
+        from flask import current_app
+        try:
+            supabase_client = current_app.config['SUPABASE_CLIENT']
+            bucket_name = current_app.config['SUPABASE_BUCKET']
+            return supabase_client.storage.from_(bucket_name).get_public_url(self.profile_image_path)
+        except Exception as e:
+            current_app.logger.error(f"Error generating public URL for profile image: {e}")
+            return None
 
 
 @login.user_loader
