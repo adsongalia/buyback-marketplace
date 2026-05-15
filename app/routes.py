@@ -160,6 +160,13 @@ def delete_product(product_id):
         flash("You cannot delete someone else's product!", "danger")
         return redirect(url_for('main.my_listings'))
 
+    if Order.query.filter_by(product_id=product.id).first():
+        flash("You cannot delete a product that has existing orders.", "danger")
+        return redirect(url_for('main.my_listings'))
+
+    # Delete associated cart items to prevent foreign key constraint failures
+    CartItem.query.filter_by(product_id=product.id).delete()
+
     # Delete associated images from Supabase Storage
     try:
         supabase_client = current_app.config['SUPABASE_CLIENT']
@@ -168,9 +175,7 @@ def delete_product(product_id):
         if paths_to_remove:
             supabase_client.storage.from_(bucket_name).remove(paths_to_remove)
     except Exception as e:
-        flash(f"Could not delete product images from storage: {str(e)}", "warning")
-        # Decide if you want to stop the process or just log the error
-        # For now, we'll continue to delete the DB record
+        current_app.logger.error(f"Could not delete product images from storage: {str(e)}")
         
     db.session.delete(product)
     db.session.commit()
@@ -280,30 +285,36 @@ def checkout():
     if request.method == "POST":
         if buy_now_product_id:
             # --- Finalize Buy Now ---
-            product_to_buy = Product.query.get_or_404(buy_now_product_id)
-            if product_to_buy.quantity < 1:
-                flash(f"Sorry, {product_to_buy.name} is out of stock.", "danger")
-                return redirect(url_for('main.product_detail', product_id=product_to_buy.id))
-            
-            # Create an Order record
-            new_order = Order(
-                buyer_id=current_user.id,
-                seller_id=product_to_buy.user_id,
-                product_id=product_to_buy.id,
-                quantity=1,
-                price_at_purchase=product_to_buy.price,
-                delivery_status='Pending'
-            )
-            db.session.add(new_order)
-            product_to_buy.quantity -= 1
-            db.session.commit()
-            flash(f"Your order for ₱{product_to_buy.price:,.2f} has been placed successfully. The seller has been notified.", "success")
-            return redirect(url_for('main.index'))
+            try:
+                # Lock the product row for update to prevent race conditions
+                product_to_buy = Product.query.with_for_update().get_or_404(buy_now_product_id)
+                if product_to_buy.quantity < 1:
+                    flash(f"Sorry, {product_to_buy.name} is out of stock.", "danger")
+                    return redirect(url_for('main.product_detail', product_id=product_to_buy.id))
+                
+                # Create an Order record
+                new_order = Order(
+                    buyer_id=current_user.id,
+                    seller_id=product_to_buy.user_id,
+                    product_id=product_to_buy.id,
+                    quantity=1,
+                    price_at_purchase=product_to_buy.price,
+                    delivery_status='Pending'
+                )
+                db.session.add(new_order)
+                product_to_buy.quantity -= 1
+                db.session.commit()
+                flash(f"Your order for ₱{product_to_buy.price:,.2f} has been placed successfully. The seller has been notified.", "success")
+                return redirect(url_for('main.index'))
+            except Exception as e:
+                db.session.rollback()
+                flash(str(e), "danger")
+                return redirect(url_for('main.checkout', buy_now_product_id=buy_now_product_id))
         else:
             # --- Finalize Standard Cart ---
             try:
-                # Re-query items within the transaction for safety
-                cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).all()
+                # Re-query items within the transaction for safety, ordered by product_id to prevent deadlocks
+                cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).order_by(CartItem.product_id).all()
                 
                 # Check stock for all items first
                 out_of_stock_items = []

@@ -10,7 +10,7 @@
             </div>
         </div>
         
-        <div id="vue-edit-product" class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
+        <div id="vue-edit-product" class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);" data-images="{{ images_data | tojson | forceescape }}" data-product-name="{{ product.name | forceescape }}">
             <div v-if="alertMessage" 
                  :class="['alert', 'custom-alert', alertType === 'success' ? 'alert-success-custom' : 'alert-danger-custom', 'shadow-lg', 'd-flex', 'align-items-center']" 
                  style="position: fixed; bottom: 30px; right: 30px; z-index: 1050; padding: 15px 25px; border-radius: 12px; font-weight: 600;">
@@ -50,7 +50,7 @@
                         {% raw %}
                         <div v-if="currentImages.length > 0" class="d-flex flex-wrap gap-2">
                             <div v-for="image in currentImages" :key="image.id" class="position-relative">
-                                <img :src="image.url" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" :alt="product.name">
+                                <img :src="image.url" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" :alt="productName">
                                 <button @click.prevent="deleteImage(image.id)" 
                                         class="btn btn-danger btn-sm position-absolute top-0 end-0 translate-middle rounded-circle p-0 d-flex align-items-center justify-content-center" 
                                         style="width: 24px; height: 24px; font-size: 0.7rem; z-index: 1;" 
@@ -102,9 +102,25 @@
 
     createApp({
         setup() {
-            const currentImages = ref({{ images_data | tojson }});
+            const currentImages = ref([]);
+            const productName = ref('');
             const alertMessage = ref('');
             const alertType = ref('success');
+
+            onMounted(() => {
+                const el = document.getElementById('vue-edit-product');
+                if (el) {
+                    productName.value = el.dataset.productName || 'Product Image';
+                    if (el.dataset.images) {
+                        try {
+                            currentImages.value = JSON.parse(el.dataset.images);
+                        } catch (e) {
+                            console.error('Failed to parse images JSON from data attribute:', e);
+                            showAlert('Could not load current images.', 'danger');
+                        }
+                    }
+                }
+            });
 
             const deleteImage = async (imageId) => {
                 if (!confirm("Are you sure you want to delete this image? This action cannot be undone.")) {
@@ -136,7 +152,7 @@
                 setTimeout(() => { alertMessage.value = ''; }, 3000);
             };
 
-            return { currentImages, deleteImage, alertMessage, alertType };
+            return { currentImages, productName, deleteImage, alertMessage, alertType };
         }
     }).mount('#vue-edit-product');
 </script>
