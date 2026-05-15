@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import or_, and_
 import os
 import uuid
+import json
 from werkzeug.utils import secure_filename
 from app import db, oauth
 from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm, ChangePasswordForm
@@ -545,13 +546,14 @@ def edit_product(product_id):
         form.quantity.data = product.quantity
         form.description.data = product.description
 
-    # Prepare images data for Vue, ensuring we have URLs
+    # Prepare images data as a JSON string for safer embedding in the template
     images_data = [
         {"id": img.id, "url": img.get_public_url()}
         for img in product.images
     ]
+    images_json_string = json.dumps(images_data)
 
-    return render_template("edit_product.html", title="Edit Item", form=form, product=product, images_json=images_data)
+    return render_template("edit_product.html", title="Edit Item", form=form, product=product, images_json_string=images_json_string)
 
 @bp.route("/delete_product_image/<int:image_id>", methods=["POST"])
 @login_required
