@@ -59,6 +59,14 @@ class User(UserMixin, db.Model):
         if self.last_seen:
             return datetime.utcnow() - self.last_seen < timedelta(minutes=5)
         return False
+        
+    def average_rating(self):
+        if not self.reviews_received:
+            return 0
+        return round(sum(r.rating for r in self.reviews_received) / len(self.reviews_received), 1)
+        
+    def review_count(self):
+        return len(self.reviews_received)
 
     def get_profile_image_url(self):
         if not self.profile_image_path:
@@ -189,3 +197,15 @@ class Order(db.Model):
 
     def __repr__(self):
         return f"<Order {self.id} - Product: {self.product.name} - Buyer: {self.buyer.email}>"
+
+class Review(db.Model):
+    __tablename__ = "reviews"
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='reviews_received')
+    buyer = db.relationship('User', foreign_keys=[buyer_id], backref='reviews_given')

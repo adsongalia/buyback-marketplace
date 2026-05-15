@@ -5,12 +5,18 @@
         <h3 class="mb-4 text-cyan fw-bold text-center text-uppercase" style="letter-spacing: 2px;"><i class="fas fa-user-edit me-2"></i> Edit Profile</h3>
 
         <div class="card p-4 p-md-5 shadow-lg border-0" style="background-color: var(--bg-card);">
+            <form id="delete-image-form" action="{{ url_for('main.delete_profile_image') }}" method="POST" class="d-none"></form>
             <form method="post" novalidate enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
                 
                 <div class="mb-4 text-center">
                     {% if current_user.get_profile_image_url() %}
-                        <img src="{{ current_user.get_profile_image_url() }}" class="rounded-circle mb-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid var(--accent-cyan);">
+                        <div class="position-relative d-inline-block">
+                            <img src="{{ current_user.get_profile_image_url() }}" class="rounded-circle mb-3 shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid var(--accent-cyan);">
+                            <button type="submit" form="delete-image-form" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 start-100 translate-middle d-flex align-items-center justify-content-center shadow" style="width: 28px; height: 28px; padding: 0; z-index: 10;" title="Remove Photo" onclick="return confirm('Are you sure you want to remove your profile photo?');">
+                                <i class="fas fa-times" style="font-size: 0.8rem;"></i>
+                            </button>
+                        </div>
                     {% else %}
                         <div class="rounded-circle d-flex justify-content-center align-items-center mb-3 mx-auto shadow-sm" style="width: 100px; height: 100px; background-color: var(--border-color); color: var(--accent-cyan); font-size: 2.5rem; font-weight: bold; border: 2px solid var(--accent-cyan);">
                             {{ current_user.dota2_username[0]|upper if current_user.dota2_username else "U" }}

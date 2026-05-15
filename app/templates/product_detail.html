@@ -108,7 +108,20 @@
                         {% endif %}
                         <div>
                             <h5 class="text-white mb-1 fw-bold">{{ product.seller.dota2_username if product.seller else "BUYBACK Official" }}</h5>
-                            <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">★★★★★ <span class="text-white" style="margin-left: 5px;">Verified Seller</span></div>
+                            <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">
+                                {% if product.seller %}
+                                    {% set avg = product.seller.average_rating() %}
+                                    {% set count = product.seller.review_count() %}
+                                    {% if count > 0 %}
+                                        {% for i in range(1, 6) %}{% if i <= avg %}★{% else %}☆{% endif %}{% endfor %}
+                                        <span class="text-white" style="margin-left: 5px;">({{ avg }})</span>
+                                    {% else %}
+                                        <span class="text-white">No reviews yet</span>
+                                    {% endif %}
+                                {% else %}
+                                    ★★★★★ <span class="text-white" style="margin-left: 5px;">Verified Seller</span>
+                                {% endif %}
+                            </div>
                         </div>
                         {% if product.seller %}
                         </a>

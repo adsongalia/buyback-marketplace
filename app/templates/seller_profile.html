@@ -14,7 +14,16 @@
             </div>
             <h3 class="mb-3 fw-bolder text-center text-white">{{ seller.dota2_username }}</h3>
             <div class="text-center">
-                <div class="text-gold mb-3" style="font-size: 1.2rem; color: var(--accent-gold);">★★★★★ <span class="text-white ms-2 fs-6">Verified Seller</span></div>
+                <div class="text-gold mb-3" style="font-size: 1.2rem; color: var(--accent-gold);">
+                    {% set avg = seller.average_rating() %}
+                    {% set count = seller.review_count() %}
+                    {% if count > 0 %}
+                        {% for i in range(1, 6) %}{% if i <= avg %}★{% else %}☆{% endif %}{% endfor %}
+                        <span class="text-white ms-2 fs-6">{{ avg }} ({{ count }} reviews)</span>
+                    {% else %}
+                        <span class="text-white ms-2 fs-6">No reviews yet</span>
+                    {% endif %}
+                </div>
                 {% if current_user.is_authenticated and seller.id != current_user.id %}
                     <a href="{{ url_for('main.chat', user_id=seller.id) }}" class="btn btn-outline-primary px-4 py-2 fw-bold shadow-sm"><i class="fas fa-comment-dots me-2"></i> Message Seller</a>
                 {% endif %}
@@ -53,6 +62,63 @@
         {% else %}
             <div class="card p-4 text-center border-0" style="background-color: var(--bg-card);">
                 <p class="m-0 text-white">This seller currently has no active listings.</p>
+            </div>
+        {% endif %}
+
+        <h3 class="text-white fw-bold mb-4 mt-5 border-bottom border-secondary pb-2">Seller Reviews</h3>
+        
+        {% if current_user.is_authenticated and seller.id != current_user.id %}
+            <div class="card p-4 mb-4" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                <h5 class="text-white mb-3">Leave a Review</h5>
+                <form action="{{ url_for('main.add_review', seller_id=seller.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-cyan">Rating (1-5)</label>
+                        <select name="rating" class="form-select w-auto" required>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Terrible</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-cyan">Comment (Optional)</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Tell us about your experience with this seller..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary fw-bold">Submit Review</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if seller.reviews_received %}
+            <div class="d-flex flex-column gap-3">
+                {% for review in seller.reviews_received|sort(attribute='timestamp', reverse=True) %}
+                <div class="card p-3" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            {% if review.buyer.get_profile_image_url() %}
+                                <img src="{{ review.buyer.get_profile_image_url() }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle d-flex justify-content-center align-items-center" style="width: 30px; height: 30px; background-color: var(--bg-main); color: var(--accent-cyan); font-weight: bold; font-size: 0.8rem; border: 1px solid var(--accent-cyan);">
+                                    {{ review.buyer.dota2_username[0]|upper if review.buyer.dota2_username else "U" }}
+                                </div>
+                            {% endif %}
+                            <span class="text-white fw-bold">{{ review.buyer.dota2_username }}</span>
+                        </div>
+                        <span class="text-white small">{{ review.timestamp.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    <div class="text-gold mb-2" style="font-size: 0.9rem;">
+                        {% for i in range(1, 6) %}{% if i <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                    </div>
+                    {% if review.comment %}
+                    <p class="text-white m-0 small">{{ review.comment }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card p-4 text-center border-0" style="background-color: var(--bg-card);">
+                <p class="m-0 text-white">No reviews yet for this seller.</p>
             </div>
         {% endif %}
     </div>

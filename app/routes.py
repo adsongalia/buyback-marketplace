@@ -8,7 +8,7 @@ import json
 from werkzeug.utils import secure_filename
 from app import db, oauth
 from app.forms import LoginForm, RegistrationForm, ProductForm, EditProfileForm, ChangePasswordForm
-from app.models import User, Product, CartItem, Message, ProductImage, PriceHistory, Order
+from app.models import User, Product, CartItem, Message, ProductImage, PriceHistory, Order, Review
 
 bp = Blueprint('main', __name__)
 
@@ -147,6 +147,34 @@ def seller_profile(seller_id):
     products = Product.query.filter_by(user_id=seller.id).order_by(Product.id.desc()).all()
     return render_template("seller_profile.html", title=f"{seller.dota2_username}'s Profile", seller=seller, products=products)
 
+@bp.route("/seller/<int:seller_id>/review", methods=["POST"])
+@login_required
+def add_review(seller_id):
+    if current_user.id == seller_id:
+        flash("You cannot review yourself.", "danger")
+        return redirect(url_for('main.seller_profile', seller_id=seller_id))
+    
+    rating = request.form.get('rating', type=int)
+    comment = request.form.get('comment')
+    
+    if not rating or rating < 1 or rating > 5:
+        flash("Please provide a valid rating between 1 and 5.", "danger")
+        return redirect(url_for('main.seller_profile', seller_id=seller_id))
+        
+    existing_review = Review.query.filter_by(seller_id=seller_id, buyer_id=current_user.id).first()
+    if existing_review:
+        existing_review.rating = rating
+        existing_review.comment = comment
+        existing_review.timestamp = datetime.utcnow()
+        flash("Your review has been updated.", "success")
+    else:
+        new_review = Review(seller_id=seller_id, buyer_id=current_user.id, rating=rating, comment=comment)
+        db.session.add(new_review)
+        flash("Your review has been submitted successfully.", "success")
+        
+    db.session.commit()
+    return redirect(url_for('main.seller_profile', seller_id=seller_id))
+
 @bp.route("/my_listings")
 @login_required
 def my_listings():
@@ -234,6 +262,21 @@ def product_detail(product_id):
                            other_listings=other_listings,
                            is_cheapest=is_cheapest
                           )
+
+@bp.route("/delete_profile_image", methods=["POST"])
+@login_required
+def delete_profile_image():
+    if current_user.profile_image_path:
+        try:
+            supabase_client = current_app.config['SUPABASE_CLIENT']
+            bucket_name = current_app.config['SUPABASE_BUCKET']
+            supabase_client.storage.from_(bucket_name).remove([current_user.profile_image_path])
+        except Exception as e:
+            current_app.logger.error(f"Could not delete profile image: {e}")
+        current_user.profile_image_path = None
+        db.session.commit()
+        flash("Your profile photo has been removed.", "success")
+    return redirect(url_for("main.edit_profile"))
 
 @bp.route("/edit_profile", methods=["GET", "POST"])
 @login_required
@@ -745,6 +788,8 @@ def admin_delete_user(user_id):
         # 1. Delete associated cart items and messages
         CartItem.query.filter_by(user_id=user_id).delete()
         Message.query.filter(or_(Message.sender_id == user_id, Message.recipient_id == user_id)).delete()
+        # Delete associated reviews
+        Review.query.filter(or_(Review.seller_id == user_id, Review.buyer_id == user_id)).delete()
 
         # 2. Delete associated orders (both as a buyer and seller)
         Order.query.filter(or_(Order.buyer_id == user_id, Order.seller_id == user_id)).delete()
