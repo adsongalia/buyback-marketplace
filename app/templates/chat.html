@@ -75,6 +75,9 @@
             let partnerId = null;
             const currentUserId = ref(null); 
 
+            // A small default notification sound. You can change this to a local file like '/static/sounds/notification.mp3'
+            const notificationSound = new Audio('https://actions.google.com/sounds/v1/ui/message_notification.ogg');
+
             const formatTimestamp = (isoString) => {
                 if (!isoString) return '';
                 return new Date(isoString).toLocaleTimeString([], {
@@ -85,8 +88,24 @@
             const fetchMessages = async () => {
                 try {
                     const response = await fetch('/api/chat/' + partnerId);
-                    messages.value = await response.json();
-                    scrollToBottom();
+                    const newMessages = await response.json();
+                    
+                    // Only force scroll to bottom if a NEW message has arrived
+                    const shouldScroll = messages.value.length !== newMessages.length;
+
+                    // Play sound if a new message arrives and it is from the partner
+                    if (messages.value.length > 0 && newMessages.length > messages.value.length) {
+                        const latestMsg = newMessages[newMessages.length - 1];
+                        if (latestMsg.sender_id !== currentUserId.value) {
+                            notificationSound.play().catch(e => console.log("Audio prevented by browser:", e));
+                        }
+                    }
+
+                    messages.value = newMessages;
+                    
+                    if (shouldScroll) {
+                        scrollToBottom();
+                    }
                 } catch (error) {
                     console.error("Failed to load messages:", error);
                 }
@@ -139,7 +158,8 @@
                 currentUserId.value = parseInt(mountEl.dataset.currentUserId); 
                 
                 fetchMessages();
-                setInterval(fetchMessages, 3000); 
+                // Check for new messages every 1.5 seconds for a real-time feel
+                setInterval(fetchMessages, 1500); 
             });
 
             return { messages, newMessage, isSending, sendMessage, deleteConversation, currentUserId, formatTimestamp };

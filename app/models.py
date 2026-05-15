@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     dota2_username = db.Column(db.String(80))
     steam_id = db.Column(db.String(80))
     google_sub = db.Column(db.String(255), unique=True, nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
     purchases = db.relationship('Order', foreign_keys='Order.buyer_id', backref='buyer', lazy='dynamic')
     sales = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy='dynamic')
 
@@ -41,6 +42,16 @@ class User(UserMixin, db.Model):
         new_username = user_info.get('name', user_email.split('@')[0])
         user = cls(email=user_email, google_sub=google_sub, dota2_username=new_username)
         return user, True # Return user and "was created" flag
+
+    def unread_message_count(self):
+        return Message.query.filter_by(
+            recipient_id=self.id, 
+            is_read=False, 
+            deleted_by_recipient=False
+        ).count()
+
+    def cart_item_count(self):
+        return sum(item.quantity for item in self.cart_items)
 
 
 @login.user_loader

@@ -73,6 +73,8 @@ def login():
             return redirect(url_for('main.login'))
         login_user(user) 
         flash("You have been logged in successfully.", "success")
+        if user.is_admin:
+            return redirect(url_for("main.admin_users"))
         return redirect(url_for("main.index"))
     return render_template("login.html", title="Log In", form=form)
 
@@ -102,6 +104,9 @@ def google_auth():
         flash("Welcome back! We noticed your profile is incomplete. Please take a moment to update it.", "info")
         return redirect(url_for('main.edit_profile'))
         
+    if user.is_admin:
+        return redirect(url_for('main.admin_users'))
+
     return redirect(url_for('main.index'))
 
 @bp.route("/logout")
@@ -270,6 +275,10 @@ def checkout():
     if buy_now_product_id:
         # --- Buy Now Logic ---
         product = Product.query.get_or_404(buy_now_product_id)
+        if product.quantity < 1:
+            flash(f"Sorry, {product.name} is currently out of stock.", "danger")
+            return redirect(url_for('main.product_detail', product_id=product.id))
+            
         # Create a temporary CartItem object (not saved to DB) for consistent template logic
         buy_now_item = CartItem(product=product, quantity=1)
         cart_items = [buy_now_item]
@@ -315,6 +324,9 @@ def checkout():
             try:
                 # Re-query items within the transaction for safety, ordered by product_id to prevent deadlocks
                 cart_items_from_db = CartItem.query.filter_by(user_id=current_user.id).order_by(CartItem.product_id).all()
+                
+                if not cart_items_from_db:
+                    raise ValueError("Your cart is empty! Cannot proceed with checkout.")
                 
                 # Check stock for all items first
                 out_of_stock_items = []
@@ -455,6 +467,14 @@ def api_get_chat(user_id):
             "timestamp": msg.timestamp.isoformat() + "Z" # Send full UTC ISO string
         })
     return jsonify(messages_data)
+
+@bp.route("/api/user_counts")
+@login_required
+def api_user_counts():
+    return jsonify({
+        "unread_count": current_user.unread_message_count(),
+        "cart_count": current_user.cart_item_count()
+    })
 
 @bp.route("/api/products")
 def api_products():
@@ -639,3 +659,13 @@ def api_update_cart(cart_item_id):
             return jsonify({"status": "error", "message": "Minimum quantity is 1. To remove the item, use the trash icon."})
             
     return jsonify({"status": "error", "message": "Invalid action for cart update."})
+
+@bp.route("/admin/users")
+@login_required
+def admin_users():
+    # Secure the route - only admins can access
+    if not current_user.is_admin:
+        flash("You do not have permission to access the admin dashboard.", "danger")
+        return redirect(url_for('main.index'))
+    users = User.query.order_by(User.id.desc()).all()
+    return render_template("admin_users.html", title="Admin - User Management", users=users)

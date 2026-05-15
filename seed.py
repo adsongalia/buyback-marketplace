@@ -14,7 +14,7 @@ if not os.environ.get('DATABASE_URL'):
     exit(1)
 
 from app import create_app, db  # noqa
-from app.models import PriceHistory, Product, ProductImage, User  # noqa
+from app.models import PriceHistory, Product, ProductImage, User, CartItem, Message, Order  # noqa
 def seed_database():
     app = create_app()
     with app.app_context():
@@ -37,6 +37,9 @@ def seed_database():
 
         # Clear existing data to prevent duplicates and orphaned images
         print("Clearing database tables...")
+        CartItem.query.delete()
+        Message.query.delete()
+        Order.query.delete()
         ProductImage.query.delete()
         PriceHistory.query.delete()
         Product.query.delete()

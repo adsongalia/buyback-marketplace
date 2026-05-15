@@ -99,8 +99,20 @@
             <div class="d-flex align-items-center gap-3">
                 {% if current_user.is_authenticated %}
                     <span class="text-secondary d-none d-md-block">Welcome, <strong class="text-gold">{{ current_user.dota2_username }}</strong></span>
-                    <a href="{{ url_for('main.messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold" style="background-color: var(--accent-cyan); border: none;"><i class="fas fa-comment-dots"></i> Inbox</a>
-                    <a href="{{ url_for('main.cart') }}" class="btn btn-warning btn-sm px-3 shadow-sm"><i class="fas fa-shopping-cart"></i> Cart</a>
+                    <a href="{{ url_for('main.messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold position-relative" style="background-color: var(--accent-cyan); border: none;">
+                        <i class="fas fa-comment-dots"></i> Inbox
+                        {% set unread_count = current_user.unread_message_count() %}
+                        <span id="nav-unread-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; display: {{ 'inline-block' if unread_count > 0 else 'none' }};">
+                            {{ unread_count if unread_count < 100 else '99+' }}
+                        </span>
+                    </a>
+                    <a href="{{ url_for('main.cart') }}" class="btn btn-warning btn-sm px-3 shadow-sm position-relative">
+                        <i class="fas fa-shopping-cart"></i> Cart
+                        {% set cart_count = current_user.cart_item_count() %}
+                        <span id="nav-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; display: {{ 'inline-block' if cart_count > 0 else 'none' }};">
+                            {{ cart_count if cart_count < 100 else '99+' }}
+                        </span>
+                    </a>
                     <a href="{{ url_for('main.add_product') }}" class="btn btn-success btn-sm px-3"><i class="fas fa-plus"></i> Sell Item</a>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary btn-sm px-3 text-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -109,6 +121,10 @@
                         <ul class="dropdown-menu dropdown-menu-dark" style="background-color: #1e293b; border-color: var(--border-color);">
                             <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">Profile Settings</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.my_listings') }}">Your Listings</a></li>
+                            {% if current_user.is_admin %}
+                            <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
+                            <li><a class="dropdown-item text-warning fw-bold" href="{{ url_for('main.admin_users') }}"><i class="fas fa-crown me-2"></i> Admin Dashboard</a></li>
+                            {% endif %}
                         </ul>
                     </div>
                     <a href="{{ url_for('main.logout') }}" class="btn btn-danger btn-sm px-3">Sign Out</a>
@@ -153,6 +169,40 @@
                 });
             }, 3500);
         });
+        
+        {% if current_user.is_authenticated %}
+        // Global Real-Time Navbar Polling
+        
+        let previousUnreadCount = {{ current_user.unread_message_count() }};
+        const globalNotificationSound = new Audio('https://actions.google.com/sounds/v1/ui/message_notification.ogg');
+        globalNotificationSound.volume = 0.6; // Slightly lower volume for the global ping
+        
+        function fetchUserCounts() {
+            fetch('{{ url_for("main.api_user_counts") }}')
+                .then(response => {
+                    if(response.ok) return response.json();
+                })
+                .then(data => {
+                    if(!data) return;
+                    
+                    const unreadBadge = document.getElementById('nav-unread-badge');
+                    if(unreadBadge) {
+                        unreadBadge.textContent = data.unread_count < 100 ? data.unread_count : '99+';
+                        unreadBadge.style.display = data.unread_count > 0 ? 'inline-block' : 'none';
+                    }
+                    
+                    const cartBadge = document.getElementById('nav-cart-badge');
+                    if(cartBadge) {
+                        cartBadge.textContent = data.cart_count < 100 ? data.cart_count : '99+';
+                        cartBadge.style.display = data.cart_count > 0 ? 'inline-block' : 'none';
+                    }
+                })
+                .catch(err => console.error("Error polling user counts:", err));
+        }
+        
+        // Check for new messages and cart items every 3 seconds
+        setInterval(fetchUserCounts, 3000);
+        {% endif %}
     </script>
 </body>
 </html>
