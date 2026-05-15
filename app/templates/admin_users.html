@@ -14,20 +14,32 @@
                             <th scope="col" class="py-3 px-4 border-bottom border-secondary text-cyan">Dota 2 Username</th>
                             <th scope="col" class="py-3 px-4 border-bottom border-secondary text-cyan">Steam ID</th>
                             <th scope="col" class="py-3 px-4 border-bottom border-secondary text-cyan text-center">Role</th>
+                            <th scope="col" class="py-3 px-4 border-bottom border-secondary text-cyan text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for user in users %}
+                        {% for user in pagination.items %}
                         <tr>
                             <td class="py-3 px-4 border-bottom border-secondary">{{ user.id }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary fw-bold">{{ user.email }}</td>
-                            <td class="py-3 px-4 border-bottom border-secondary">{{ user.dota2_username or '<span class="text-muted fst-italic">Not Set</span>'|safe }}</td>
-                            <td class="py-3 px-4 border-bottom border-secondary">{{ user.steam_id or '<span class="text-muted fst-italic">Not Set</span>'|safe }}</td>
+                            <td class="py-3 px-4 border-bottom border-secondary">{{ user.dota2_username or '<span class="text-white fst-italic">Not Set</span>'|safe }}</td>
+                            <td class="py-3 px-4 border-bottom border-secondary">{{ user.steam_id or '<span class="text-white fst-italic">Not Set</span>'|safe }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary text-center">
                                 {% if user.is_admin %}
-                                <span class="badge px-3 py-2" style="background-color: var(--accent-gold); color: #000;">Admin</span>
+                                <span class="badge px-3 py-2 fw-bold" style="background-color: var(--accent-gold); color: #451a03;">Admin</span>
                                 {% else %}
                                 <span class="badge bg-secondary px-3 py-2">User</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 border-bottom border-secondary text-center">
+                                {% if user.id != current_user.id %}
+                                <form action="{{ url_for('main.admin_delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this user and all their data? This cannot be undone.');" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm px-2 fw-bold" title="Delete User">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn btn-outline-secondary btn-sm px-2 fw-bold disabled" title="Cannot delete yourself"><i class="fas fa-ban"></i></button>
                                 {% endif %}
                             </td>
                         </tr>
@@ -36,6 +48,31 @@
                 </table>
             </div>
         </div>
+        
+        <!-- Pagination Controls -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="User pagination" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link fw-bold" href="{{ url_for('main.admin_users', page=pagination.prev_num) if pagination.has_prev else '#' }}" style="background-color: var(--bg-card); border-color: var(--border-color); color: var(--accent-cyan);">&laquo; Prev</a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+                            <a class="page-link fw-bold" href="{{ url_for('main.admin_users', page=page_num) }}" style="{% if pagination.page == page_num %}background-color: var(--accent-cyan); color: #000; border-color: var(--accent-cyan);{% else %}background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-main);{% endif %}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link" style="background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-muted);">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link fw-bold" href="{{ url_for('main.admin_users', page=pagination.next_num) if pagination.has_next else '#' }}" style="background-color: var(--bg-card); border-color: var(--border-color); color: var(--accent-cyan);">Next &raquo;</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
