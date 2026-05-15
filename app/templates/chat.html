@@ -158,8 +158,8 @@
                 currentUserId.value = parseInt(mountEl.dataset.currentUserId); 
                 
                 fetchMessages();
-                // Check for new messages every 1.5 seconds for a real-time feel
-                setInterval(fetchMessages, 1500); 
+                // Check for new messages every 10 seconds to avoid Vercel invocation limits
+                setInterval(fetchMessages, 10000); 
             });
 
             return { messages, newMessage, isSending, sendMessage, deleteConversation, currentUserId, formatTimestamp };

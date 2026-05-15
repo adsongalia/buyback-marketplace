@@ -200,8 +200,8 @@
                 .catch(err => console.error("Error polling user counts:", err));
         }
         
-        // Check for new messages and cart items every 3 seconds
-        setInterval(fetchUserCounts, 3000);
+        // Check for new messages and cart items every 30 seconds to avoid Vercel limits
+        setInterval(fetchUserCounts, 30000);
         {% endif %}
     </script>
 </body>

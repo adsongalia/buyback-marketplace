@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
 from config import Config
 from supabase import create_client, Client
@@ -17,6 +18,9 @@ login.login_view = 'main.login'
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Important for Vercel: Ensures url_for(_external=True) generates HTTPS URLs for Google OAuth
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
