@@ -542,8 +542,18 @@ def mark_delivered(order_id):
         return redirect(url_for('main.seller_deliveries'))
 
     order.delivery_status = 'Delivered'
+    
+    # Automatically notify the buyer via chat
+    auto_message = Message(
+        sender_id=current_user.id,
+        recipient_id=order.buyer_id,
+        body=f"📦 Order Update: I have just delivered your order for '{order.product.name}'! Please verify and consider leaving a review on my profile. Thank you!",
+        is_read=False
+    )
+    db.session.add(auto_message)
+    
     db.session.commit()
-    flash(f"Order {order.id} for {order.product.name} marked as delivered.", "success")
+    flash(f"Order {order.id} for {order.product.name} marked as delivered, and the buyer has been notified.", "success")
     return redirect(url_for('main.seller_deliveries'))
 
 @bp.route("/api/chat/<int:user_id>")

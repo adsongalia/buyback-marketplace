@@ -3,6 +3,14 @@
 <div class="row justify-content-center mt-3 mb-5">
     <div class="col-lg-8">
         <h2 class="text-white fw-bolder mb-4 text-uppercase text-center" style="letter-spacing: 1px;"><i class="fas fa-inbox text-cyan me-2"></i> Your Inbox</h2>
+        
+        {% if pending_deliveries_count > 0 %}
+        <div class="alert alert-warning-custom custom-alert shadow-sm mb-4 d-flex justify-content-between align-items-center" role="alert">
+            <div><i class="fas fa-box-open me-2 text-warning"></i> You have <strong>{{ pending_deliveries_count }}</strong> pending order(s) to deliver to buyers!</div>
+            <a href="{{ url_for('main.seller_deliveries') }}" class="btn btn-warning btn-sm fw-bold">View Deliveries</a>
+        </div>
+        {% endif %}
+        
         <div class="card border-0 shadow-lg" style="background-color: var(--bg-card); overflow: hidden;">
             
             {% for conversation in conversations %}

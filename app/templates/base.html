@@ -124,6 +124,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('main.profile') }}">Profile Settings</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.my_listings') }}">Your Listings</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.order_history') }}">Order History</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.seller_deliveries') }}">Pending Deliveries</a></li>
                             {% if current_user.is_admin or current_user.email.strip().lower() == 'adsongalia@gbox.adnu.edu.ph' %}
                             <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
                             <li><a class="dropdown-item text-warning fw-bold" href="{{ url_for('main.admin_users') }}"><i class="fas fa-crown me-2"></i> Admin Dashboard</a></li>
