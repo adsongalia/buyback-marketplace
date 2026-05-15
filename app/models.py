@@ -119,7 +119,8 @@ class Product(db.Model):
     def to_dict(self):
         return {"id": self.id, "name": self.name, "price": self.price,
                 "rarity": self.rarity, "status": self.status, "quantity": self.quantity,
-                "image_url": self.get_first_image_url()}
+                "image_url": self.get_first_image_url(),
+                "user_id": self.user_id}
 
     def __repr__(self):
         return f"<Product {self.name}>"

@@ -5,7 +5,7 @@
     <p class="fs-5 text-white">Buy and sell rare virtual items from the world of Dota 2.</p>
 </div>
 
-<div id="vue-marketplace">
+<div id="vue-marketplace" data-current-user-id="{{ current_user.id if current_user.is_authenticated else 'null' }}">
 
     <div v-if="alertMessage" 
          :class="['alert', 'custom-alert', alertType === 'success' ? 'alert-success-custom' : 'alert-danger-custom', 'shadow-lg', 'd-flex', 'align-items-center']" 
@@ -21,13 +21,16 @@
 
     <div class="row g-4">
         <div v-for="(product, index) in products" :key="product.id" class="col-md-4 col-lg-3">
-            <div class="card card-hover h-100 overflow-hidden animated-card" :style="{ animationDelay: (index * 50) + 'ms' }">
+            <div class="card card-hover h-100 overflow-hidden animated-card" :style="{ animationDelay: (index * 50) + 'ms', opacity: product.quantity === 0 ? '0.6' : '1', filter: product.quantity === 0 ? 'grayscale(80%)' : 'none' }">
                 
                 <a :href="'/product/' + product.id" class="text-decoration-none">
                     <div class="position-relative w-100" style="height: 220px; background-color: var(--bg-main); border-bottom: 1px solid var(--border-color);">
                         <img v-if="product.image_url" :src="product.image_url" class="w-100 h-100" style="object-fit: cover;" :alt="product.name" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <div class="position-absolute top-0 start-0 w-100 h-100 flex-column justify-content-center align-items-center" :style="{ display: product.image_url ? 'none' : 'flex' }">
                             <span style="font-size: 3rem; color: #3b4b6b;">📦</span>
+                        </div>
+                        <div v-if="product.quantity === 0" class="position-absolute top-50 start-50 translate-middle" style="z-index: 2;">
+                            <span class="badge bg-danger fs-6 px-3 py-2 shadow border border-2 border-dark" style="transform: rotate(-10deg); letter-spacing: 1px;">OUT OF STOCK</span>
                         </div>
                     </div>
                 </a>
@@ -51,7 +54,9 @@
                     
                     <p class="small mt-auto mb-4 text-white">Stock: <strong class="text-white">{% raw %}{{ product.quantity }}{% endraw %}</strong></p>
                     
-                    <button @click="addToCart(product.id)" class="btn btn-outline-primary w-100 mt-auto"><i class="fas fa-cart-plus me-2"></i> Add to Cart</button>
+                    <button v-if="product.user_id === currentUserId" disabled class="btn btn-outline-secondary w-100 mt-auto disabled text-white"><i class="fas fa-ban me-2"></i> Your Listing</button>
+                    <button v-else-if="product.quantity === 0" disabled class="btn btn-outline-danger w-100 mt-auto disabled text-white"><i class="fas fa-times-circle me-2"></i> Out of Stock</button>
+                    <button v-else @click="addToCart(product.id)" class="btn btn-outline-primary w-100 mt-auto"><i class="fas fa-cart-plus me-2"></i> Add to Cart</button>
                 </div>
             </div>
         </div>
@@ -66,6 +71,7 @@
             const products = ref([]);
             const alertMessage = ref('');
             const alertType = ref('success');
+            const currentUserId = ref(null);
 
             const fetchProducts = async () => {
                 try {
@@ -97,9 +103,16 @@
                 }
             };
 
-            onMounted(() => { fetchProducts(); });
+            onMounted(() => {
+                const mountEl = document.getElementById('vue-marketplace');
+                if (mountEl) {
+                    const userIdStr = mountEl.dataset.currentUserId;
+                    currentUserId.value = userIdStr !== 'null' ? parseInt(userIdStr) : null;
+                }
+                fetchProducts(); 
+            });
 
-            return { products, alertMessage, alertType, addToCart };
+            return { products, alertMessage, alertType, currentUserId, addToCart };
         }
     }).mount('#vue-marketplace');
 </script>

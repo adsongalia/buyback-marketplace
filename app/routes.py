@@ -370,6 +370,11 @@ def checkout():
     if buy_now_product_id:
         # --- Buy Now Logic ---
         product = Product.query.get_or_404(buy_now_product_id)
+        
+        if product.user_id == current_user.id:
+            flash("You cannot buy your own items.", "danger")
+            return redirect(url_for('main.product_detail', product_id=product.id))
+            
         if product.quantity < 1:
             flash(f"Sorry, {product.name} is currently out of stock.", "danger")
             return redirect(url_for('main.product_detail', product_id=product.id))
@@ -459,6 +464,12 @@ def checkout():
                 return redirect(url_for('main.cart'))
         
     return render_template("checkout.html", title="Checkout", total_price=total_price, cart_items=cart_items)
+
+@bp.route("/order_history")
+@login_required
+def order_history():
+    orders = Order.query.filter_by(buyer_id=current_user.id).order_by(Order.order_date.desc()).all()
+    return render_template("order_history.html", title="Order History", orders=orders)
 
 @bp.route("/messages")
 @login_required
@@ -588,6 +599,9 @@ def api_products():
 @login_required
 def api_add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
+    if product.user_id == current_user.id:
+        return jsonify({"status": "error", "message": "You cannot add your own items to the cart."})
+
     if product.quantity <= 0:
         return jsonify({"status": "error", "message": "Item is currently out of stock."})
 
