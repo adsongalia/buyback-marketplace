@@ -17,7 +17,7 @@
             --bg-card: #151b2b;
             --border-color: #2a344a;
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text-muted: #ffffff;
             --accent-cyan: #00e5ff;
             --accent-gold: #fbbf24;
             --btn-hover: #00b3cc;
@@ -49,6 +49,8 @@
         }
         .form-control::placeholder { color: #64748b !important; opacity: 1; }
         .form-label { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .text-muted, .text-secondary { color: #ffffff !important; }
         
         /* Buttons */
         .btn { border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; transition: all 0.2s; padding: 10px 20px; text-transform: uppercase; font-size: 0.85rem;}
@@ -98,7 +100,7 @@
             
             <div class="d-flex align-items-center gap-3">
                 {% if current_user.is_authenticated %}
-                    <span class="text-secondary d-none d-md-block">Welcome, <strong class="text-gold">{{ current_user.dota2_username }}</strong></span>
+                    <span class="text-white d-none d-md-block">Welcome, <strong class="text-gold">{{ current_user.dota2_username }}</strong></span>
                     <a href="{{ url_for('main.messages') }}" class="btn btn-info btn-sm px-3 shadow-sm text-dark fw-bold position-relative" style="background-color: var(--accent-cyan); border: none;">
                         <i class="fas fa-comment-dots"></i> Inbox
                         {% set unread_count = current_user.unread_message_count() %}

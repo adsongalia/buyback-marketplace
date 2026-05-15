@@ -5,7 +5,7 @@
         
         <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded shadow-sm" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
             <div class="d-flex align-items-center">
-                <a href="{{ url_for('main.messages') }}" class="btn btn-outline-secondary border-0 me-3" style="color: #94a3b8;"><i class="fas fa-arrow-left"></i></a>
+                <a href="{{ url_for('main.messages') }}" class="btn btn-outline-secondary border-0 me-3 text-white"><i class="fas fa-arrow-left"></i></a>
                 <div class="rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; background-color: var(--border-color); color: #00e5ff; font-weight: bold; font-size: 1.2rem;">
                     {{ chat_partner.dota2_username[0]|upper if chat_partner.dota2_username else "U" }}
                 </div>
@@ -45,7 +45,7 @@
                     </div>
                 </div>
 
-                <div v-if="messages.length === 0" class="text-center text-muted my-auto py-5">
+                <div v-if="messages.length === 0" class="text-center text-white my-auto py-5">
                     <i class="fas fa-comments fs-1 mb-3" style="color: #3b4b6b;"></i> 
                     <h5>Start a conversation with {{ chat_partner.dota2_username }}.</h5>
                 </div>

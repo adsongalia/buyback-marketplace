@@ -18,7 +18,7 @@
                                 <span class="badge bg-danger rounded-pill px-3 py-2 fw-bold">{{ conversation.unread_count }} New</span>
                             {% endif %}
                         </div>
-                        <p class="m-0" style="color: #94a3b8;">
+                        <p class="m-0 text-white">
                             {% if conversation.latest_message %}{{ conversation.latest_message.body[:50] }}{% if conversation.latest_message.body|length > 50 %}...{% endif %}{% else %}Start a conversation...{% endif %}
                         </p>
                     </div>
@@ -30,7 +30,7 @@
                 <div class="p-5 text-center">
                     <i class="fas fa-envelope-open-text mb-4" style="font-size: 5rem; color: #3b4b6b;"></i>
                     <h3 class="text-white fw-bold mb-3">No active conversations.</h3>
-                    <p class="mb-4 fs-5" style="color: #94a3b8;">Visit the marketplace and message a seller to start chatting!</p>
+                    <p class="mb-4 fs-5 text-white">Visit the marketplace and message a seller to start chatting!</p>
                     <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg px-5 fw-bold shadow-sm">Browse Market</a>
                 </div>
             {% endif %}

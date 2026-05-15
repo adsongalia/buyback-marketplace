@@ -3,10 +3,10 @@
 <div class="row justify-content-center mt-4 mb-5">
     <div class="col-md-8 col-lg-6">
         <div class="position-relative text-center mb-4">
-            <a href="{{ url_for('main.my_listings') }}" class="btn btn-outline-secondary border-0 position-absolute top-50 start-0 translate-middle-y" style="color: #94a3b8; z-index: 2;"><i class="fas fa-arrow-left"></i></a>
+            <a href="{{ url_for('main.my_listings') }}" class="btn btn-outline-secondary border-0 position-absolute top-50 start-0 translate-middle-y" style="color: white; z-index: 2;"><i class="fas fa-arrow-left"></i></a>
             <div>
                 <h3 class="text-cyan fw-bold text-uppercase m-0" style="letter-spacing: 2px;"><i class="fas fa-pen-nib me-2"></i> Edit Listing</h3>
-                <p class="mb-0" style="color: #94a3b8;">Updating: <strong class="text-white">{{ product.name }}</strong></p>
+                <p class="mb-0 text-white">Updating: <strong class="text-white">{{ product.name }}</strong></p>
             </div>
         </div>
         
@@ -59,7 +59,7 @@
                                 </button>
                             </div>
                         </div>
-                        <p v-else class="text-muted m-2 mb-0">No images uploaded.</p>
+                        <p v-else class="text-white m-2 mb-0">No images uploaded.</p>
                         {% endraw %}
                     </div>
                 </div>

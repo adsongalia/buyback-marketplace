@@ -2,7 +2,7 @@
 {% block content %}
 <div class="p-5 mb-5 rounded-4 text-center shadow" style="background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); border: 1px solid #334155;">
     <h1 class="display-4 fw-bolder text-white mb-3">The Premier Dota 2 Marketplace</h1>
-    <p class="fs-5 text-secondary">Buy and sell rare virtual items from the world of Dota 2.</p>
+    <p class="fs-5 text-white">Buy and sell rare virtual items from the world of Dota 2.</p>
 </div>
 
 <div id="vue-marketplace">
@@ -16,7 +16,7 @@
  
     <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-2 pt-4"> 
         <h3 class="fw-bold text-white m-0">Featured Listings</h3>
-        <span class="text-secondary fw-semibold">{% raw %}{{ products.length }}{% endraw %} Listings Available</span>
+        <span class="text-white fw-semibold">{% raw %}{{ products.length }}{% endraw %} Listings Available</span>
     </div>
 
     <div class="row g-4">
@@ -49,7 +49,7 @@
                         <span class="badge" style="background-color: #0284c7; color: white;">{% raw %}{{ product.status }}{% endraw %}</span>
                     </div>
                     
-                    <p class="small mt-auto mb-4" style="color: #94a3b8;">Stock: <strong class="text-white">{% raw %}{{ product.quantity }}{% endraw %}</strong></p>
+                    <p class="small mt-auto mb-4 text-white">Stock: <strong class="text-white">{% raw %}{{ product.quantity }}{% endraw %}</strong></p>
                     
                     <button @click="addToCart(product.id)" class="btn btn-outline-primary w-100 mt-auto"><i class="fas fa-cart-plus me-2"></i> Add to Cart</button>
                 </div>

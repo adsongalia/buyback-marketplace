@@ -10,7 +10,7 @@
     </div>
 
     <div class="col-lg-10">
-        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary mb-4 border-0" style="color: #94a3b8;"><i class="fas fa-arrow-left me-2"></i> Back to Marketplace</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary mb-4 border-0 text-white"><i class="fas fa-arrow-left me-2"></i> Back to Marketplace</a>
         
         <div class="card p-0 overflow-hidden shadow-lg border-0" style="background-color: var(--bg-card);">
             <div class="row g-0">
@@ -37,7 +37,7 @@
                     {% else %}
                         <div class="text-center w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="background-color: var(--bg-main);">
                             <div style="font-size: 5rem; color: #3b4b6b;">📦</div>
-                            <div class="fw-bold mt-2" style="color: #94a3b8;">NO IMAGE</div>
+                            <div class="fw-bold mt-2 text-white">NO IMAGE</div>
                         </div>
                     {% endif %}
                 </div>
@@ -63,12 +63,12 @@
                     </div>
                     
                     <h5 class="text-white mb-3">Qty in Stock: <span style="color: var(--accent-cyan);">{{ product.quantity }}</span></h5>
-                    <h5 class="text-white mb-4">Estimated Delivery: <span style="color: #94a3b8; font-weight: 400;">Within 24 Hours</span></h5>
+                    <h5 class="text-white mb-4">Estimated Delivery: <span class="text-white" style="font-weight: 400;">Within 24 Hours</span></h5>
                     <hr style="border-color: var(--border-color);">
                     
                     <div class="d-flex justify-content-between align-items-end mb-2 mt-2"> 
                         <h4 class="text-white fw-bold m-0">Product Description:</h4>
-                        <small style="color: #94a3b8;">Listed Recently</small>
+                        <small class="text-white">Listed Recently</small>
                     </div>
                     <p style="color: #cbd5e1; line-height: 1.7; font-size: 1.05rem;">{{ product.description or "No description provided for this item." }}</p>
 
@@ -78,8 +78,8 @@
                         <h5 class="text-white fw-bold mb-3">Other Sellers for this Item</h5>
                         <ul class="list-group list-group-flush">
                             {% for listing in other_listings %}
-                            <a href="{{ url_for('main.product_detail', product_id=listing.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="background: none; border-color: var(--border-color) !important; color: var(--text-main);">
-                                <span><i class="fas fa-user-circle me-2 text-muted"></i> {{ listing.seller.dota2_username if listing.seller else "N/A" }}</span>
+                            <a href="{{ url_for('main.product_detail', product_id=listing.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="background: none; border-color: var(--border-color) !important; color: #ffffff;">
+                                <span><i class="fas fa-user-circle me-2 text-white"></i> {{ listing.seller.dota2_username if listing.seller else "N/A" }}</span>
                                 <span class="fw-bold text-cyan">₱{{ "{:,.2f}".format(listing.price) }}</span>
                             </a>
                             {% endfor %}
@@ -101,7 +101,7 @@
                         </div>
                         <div>
                             <h5 class="text-white mb-1 fw-bold">{{ product.seller.dota2_username if product.seller else "BUYBACK Official" }}</h5>
-                            <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">★★★★★ <span style="color: #94a3b8; margin-left: 5px;">Verified Seller</span></div>
+                            <div class="text-gold" style="font-size: 0.9rem; color: var(--accent-gold);">★★★★★ <span class="text-white" style="margin-left: 5px;">Verified Seller</span></div>
                         </div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
                     {% if current_user.is_authenticated and product.user_id and product.user_id != current_user.id %}
                         <a href="{{ url_for('main.chat', user_id=product.user_id) }}" class="btn btn-outline-secondary w-100 py-3 fw-bold border-0" style="color: #cbd5e1;"><i class="fas fa-comment-dots me-2"></i> Message Seller</a>
                     {% else %}
-                        <button class="btn btn-outline-secondary w-100 py-3 fw-bold border-0 disabled" style="color: #94a3b8;"><i class="fas fa-comment-dots me-2"></i> Messaging Unavailable</button>
+                        <button class="btn btn-outline-secondary w-100 py-3 fw-bold border-0 disabled text-white"><i class="fas fa-comment-dots me-2"></i> Messaging Unavailable</button>
                     {% endif %}
                 </div>
                 <div class="col-4 p-3 border-end" style="border-color: var(--border-color) !important;">
@@ -143,7 +143,7 @@
                     const historyData = await response.json();
 
                     if (historyData.length <= 1) {
-                        document.getElementById('priceHistoryChart').parentElement.innerHTML = '<p class="text-muted text-center m-0">Not enough data to display a price trend.</p>';
+                        document.getElementById('priceHistoryChart').parentElement.innerHTML = '<p class="text-white text-center m-0">Not enough data to display a price trend.</p>';
                         return;
                     }
 
@@ -167,8 +167,8 @@
                         options: {
                             responsive: true,
                             scales: {
-                                y: { beginAtZero: false, ticks: { color: 'var(--text-muted)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                                x: { ticks: { color: 'var(--text-muted)' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                                y: { beginAtZero: false, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
                             },
                             plugins: { legend: { labels: { color: 'var(--text-main)' } } }
                         }
