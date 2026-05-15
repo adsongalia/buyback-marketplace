@@ -49,7 +49,7 @@
                     {% for item in cart_items %}
                     <div class="d-flex justify-content-between align-items-center {% if not loop.last %}mb-2{% endif %}">
                         <span class="text-white">{% if item.quantity > 1 %}{{ item.quantity }}x {% endif %}{{ item.product.name }}</span>
-                        <span class="text-muted">₱{{ "{:,.2f}".format(item.product.price * item.quantity) }}</span>
+                        <span class="text-white">₱{{ "{:,.2f}".format(item.product.price * item.quantity) }}</span>
                     </div>
                     {% endfor %}
                 </div>

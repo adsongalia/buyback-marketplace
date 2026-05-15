@@ -54,7 +54,7 @@
             <div class="p-4" style="background-color: var(--bg-main);">
                 <div class="row align-items-center">
                     <div class="col-md-6 text-center text-md-start mb-3 mb-md-0"> 
-                        <h4 class="text-muted m-0 text-uppercase fw-bold">Order Total: <span class="text-success fs-3 ms-2 fw-bolder">₱{% raw %}{{ totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}</span></h4>
+                        <h4 class="text-white m-0 text-uppercase fw-bold">Order Total: <span class="fs-3 ms-2 fw-bolder" style="color: #10b981;">₱{% raw %}{{ totalPrice.toLocaleString('en-US', {minimumFractionDigits: 2}) }}{% endraw %}</span></h4>
                     </div>
                     <div class="col-md-6 text-center text-md-end">
                         <a href="{{ url_for('main.checkout') }}" class="btn btn-success btn-lg fw-bold shadow-lg px-5 py-3 text-uppercase" style="letter-spacing: 1px;"><i class="fas fa-bolt me-2"></i> Proceed to Checkout</a>
