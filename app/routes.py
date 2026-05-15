@@ -546,14 +546,13 @@ def edit_product(product_id):
         form.quantity.data = product.quantity
         form.description.data = product.description
 
-    # Prepare images data as a JSON string for safer embedding in the template
+    # Prepare images data for the template
     images_data = [
         {"id": img.id, "url": img.get_public_url()}
         for img in product.images
     ]
-    images_json_string = json.dumps(images_data)
 
-    return render_template("edit_product.html", title="Edit Item", form=form, product=product, images_json_string=images_json_string)
+    return render_template("edit_product.html", title="Edit Item", form=form, product=product, images_data=images_data)
 
 @bp.route("/delete_product_image/<int:image_id>", methods=["POST"])
 @login_required
