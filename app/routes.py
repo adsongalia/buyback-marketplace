@@ -24,7 +24,8 @@ def _upload_image_to_storage(file_storage):
         bucket_name = current_app.config['SUPABASE_BUCKET']
         
         _, ext = os.path.splitext(file_storage.filename)
-        file_path = f"public/{uuid.uuid4()}{ext.lower()}"
+        # Use a unique filename without any folder prefix for a cleaner URL.
+        file_path = f"{uuid.uuid4()}{ext.lower()}"
         
         file_bytes = file_storage.read()
         # Rewind the file pointer in case it needs to be read again
