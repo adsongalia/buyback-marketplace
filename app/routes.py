@@ -145,7 +145,12 @@ def seller_profile(seller_id):
     seller = User.query.get_or_404(seller_id)
     # Fetch active listings for this seller
     products = Product.query.filter_by(user_id=seller.id).order_by(Product.id.desc()).all()
-    return render_template("seller_profile.html", title=f"{seller.dota2_username}'s Profile", seller=seller, products=products)
+    
+    has_bought = False
+    if current_user.is_authenticated:
+        has_bought = Order.query.filter_by(buyer_id=current_user.id, seller_id=seller_id).first() is not None
+
+    return render_template("seller_profile.html", title=f"{seller.dota2_username}'s Profile", seller=seller, products=products, has_bought=has_bought)
 
 @bp.route("/seller/<int:seller_id>/review", methods=["POST"])
 @login_required
@@ -154,6 +159,11 @@ def add_review(seller_id):
         flash("You cannot review yourself.", "danger")
         return redirect(url_for('main.seller_profile', seller_id=seller_id))
     
+    has_bought = Order.query.filter_by(buyer_id=current_user.id, seller_id=seller_id).first()
+    if not has_bought:
+        flash("You can only review sellers you have purchased from.", "danger")
+        return redirect(url_for('main.seller_profile', seller_id=seller_id))
+
     rating = request.form.get('rating', type=int)
     comment = request.form.get('comment')
     

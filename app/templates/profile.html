@@ -33,6 +33,41 @@
             </div>
             {% endif %}
         </div>
+        
+        <div class="card p-5 shadow-lg border-0 mt-4 mb-5" style="background-color: #151b2b;">
+            <h3 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2">Reviews You've Received</h3>
+            {% if user.reviews_received %}
+                <div class="d-flex flex-column gap-3">
+                    {% for review in user.reviews_received|sort(attribute='timestamp', reverse=True) %}
+                    <div class="card p-3" style="background-color: var(--bg-card); border: 1px solid var(--border-color);">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if review.buyer.get_profile_image_url() %}
+                                    <img src="{{ review.buyer.get_profile_image_url() }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle d-flex justify-content-center align-items-center" style="width: 30px; height: 30px; background-color: var(--bg-main); color: var(--accent-cyan); font-weight: bold; font-size: 0.8rem; border: 1px solid var(--accent-cyan);">
+                                        {{ review.buyer.dota2_username[0]|upper if review.buyer.dota2_username else "U" }}
+                                    </div>
+                                {% endif %}
+                                <span class="text-white fw-bold">{{ review.buyer.dota2_username }}</span>
+                            </div>
+                            <span class="text-white small">{{ review.timestamp.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <div class="text-gold mb-2" style="font-size: 0.9rem;">
+                            {% for i in range(1, 6) %}{% if i <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                        </div>
+                        {% if review.comment %}
+                        <p class="text-white m-0 small">{{ review.comment }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <p class="text-white m-0">You have not received any reviews yet.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
