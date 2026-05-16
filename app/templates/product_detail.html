@@ -188,21 +188,55 @@
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Price (₱)',
+                                label: 'Price',
                                 data: prices,
-                                borderColor: 'var(--accent-cyan)',
+                                borderColor: '#00e5ff',
                                 backgroundColor: 'rgba(0, 229, 255, 0.1)',
                                 fill: true,
-                                tension: 0.2
+                                tension: 0.2,
+                                pointRadius: 4,
+                                pointHoverRadius: 7,
+                                pointHoverBackgroundColor: '#ffffff',
+                                pointHoverBorderColor: '#00e5ff',
+                                pointHoverBorderWidth: 2
                             }]
                         },
                         options: {
                             responsive: true,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
                             scales: {
-                                y: { beginAtZero: false, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                y: { 
+                                    beginAtZero: false, 
+                                    ticks: { 
+                                        color: '#ffffff',
+                                        callback: function(value) {
+                                            return '₱' + value.toLocaleString('en-US', {minimumFractionDigits: 2});
+                                        }
+                                    }, 
+                                    grid: { color: 'rgba(255,255,255,0.1)' } 
+                                },
                                 x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
                             },
-                            plugins: { legend: { labels: { color: 'var(--text-main)' } } }
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: '#3b4b6b',
+                                    borderWidth: 1,
+                                    padding: 10,
+                                    displayColors: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Price: ₱' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                            }
                         }
                     });
                 } catch (error) {
@@ -249,3 +283,4 @@
         }
     }).mount('#vue-product');
 </script>
+{% endblock %}

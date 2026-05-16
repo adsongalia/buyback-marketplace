@@ -256,7 +256,7 @@ def product_detail(product_id):
 
     # Prepare price history data for the graph
     price_history_data = [
-        {"timestamp": ph.timestamp.strftime('%b %d, %Y %H:%M'), "price": ph.price}
+        {"timestamp": ph.timestamp.strftime('%b %d, %Y'), "price": ph.price}
         for ph in sorted(product.price_history, key=lambda x: x.timestamp)
     ]
 
