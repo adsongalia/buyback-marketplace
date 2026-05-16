@@ -168,10 +168,9 @@
             let productId = null;
 
             // BONUS 2: Render Price Chart
-            const renderPriceChart = async () => {
+            const renderPriceChart = () => {
                 try {
-                    const response = await fetch(`/api/product/${productId}/price_history`);
-                    const historyData = await response.json();
+                    const historyData = JSON.parse('{{ price_history_json | safe }}');
 
                     if (historyData.length <= 1) {
                         document.getElementById('priceHistoryChart').parentElement.innerHTML = '<p class="text-white text-center m-0">Not enough data to display a price trend.</p>';
@@ -179,7 +178,7 @@
                     }
 
                     const ctx = document.getElementById('priceHistoryChart').getContext('2d');
-                    const labels = historyData.map(d => new Date(d.timestamp).toLocaleDateString());
+                    const labels = historyData.map(d => d.timestamp);
                     const prices = historyData.map(d => d.price);
 
                     priceHistoryChart.value = new Chart(ctx, {
