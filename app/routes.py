@@ -166,16 +166,9 @@ def add_review(seller_id):
         flash("Please provide a valid rating between 1 and 5.", "danger")
         return redirect(url_for('main.seller_profile', seller_id=seller_id))
         
-    existing_review = Review.query.filter_by(seller_id=seller_id, buyer_id=current_user.id).first()
-    if existing_review:
-        existing_review.rating = rating
-        existing_review.comment = comment
-        existing_review.timestamp = datetime.utcnow()
-        flash("Your review has been updated.", "success")
-    else:
-        new_review = Review(seller_id=seller_id, buyer_id=current_user.id, rating=rating, comment=comment)
-        db.session.add(new_review)
-        flash("Your review has been submitted successfully.", "success")
+    new_review = Review(seller_id=seller_id, buyer_id=current_user.id, rating=rating, comment=comment)
+    db.session.add(new_review)
+    flash("Your review has been submitted successfully.", "success")
         
     db.session.commit()
     return redirect(url_for('main.seller_profile', seller_id=seller_id))
@@ -261,11 +254,19 @@ def product_detail(product_id):
         if product.price <= min_price:
             is_cheapest = True
 
+    # Prepare price history data for the graph
+    price_history_data = [
+        {"timestamp": ph.timestamp.strftime('%b %d, %Y %H:%M'), "price": ph.price}
+        for ph in sorted(product.price_history, key=lambda x: x.timestamp)
+    ]
+
     return render_template("product_detail.html", 
                            title=product.name, 
                            product=product,
                            other_listings=other_listings,
-                           is_cheapest=is_cheapest
+                           is_cheapest=is_cheapest,
+                           price_history=price_history_data,
+                           price_history_json=json.dumps(price_history_data)
                           )
 
 @bp.route("/delete_profile_image", methods=["POST"])
