@@ -156,7 +156,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     const { createApp, ref, onMounted } = Vue;
 
@@ -170,7 +172,7 @@
             // BONUS 2: Render Price Chart
             const renderPriceChart = () => {
                 try {
-                    const historyData = JSON.parse('{{ price_history_json | safe }}');
+                    const historyData = {{ price_history | tojson }};
 
                     if (historyData.length <= 1) {
                         document.getElementById('priceHistoryChart').parentElement.innerHTML = '<p class="text-white text-center m-0">Not enough data to display a price trend.</p>';
@@ -247,4 +249,3 @@
         }
     }).mount('#vue-product');
 </script>
-{% endblock %}
