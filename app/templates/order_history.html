@@ -24,6 +24,11 @@
                             <td class="py-3 px-4 border-bottom border-secondary">{{ order.order_date.strftime('%b %d, %Y') }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary">
                                 <a href="{{ url_for('main.product_detail', product_id=order.product.id) }}" class="text-white text-decoration-none fw-bold">{{ order.product.name }}</a>
+                                <div class="text-muted small mt-1">Seller Steam ID: <span class="text-cyan">{{ order.seller.steam_id or 'Not Set' }}</span>
+                                    {% if order.seller.steam_id %}
+                                    <i class="fas fa-copy ms-1" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color=''" onclick="navigator.clipboard.writeText('{{ order.seller.steam_id }}'); this.className='fas fa-check text-success ms-1'; setTimeout(() => this.className='fas fa-copy ms-1', 2000);" title="Copy Steam ID"></i>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="py-3 px-4 border-bottom border-secondary text-cyan fw-bold">₱{{ "{:,.2f}".format(order.price_at_purchase) }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary">

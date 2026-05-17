@@ -13,6 +13,13 @@
                 {% endif %}
             </div>
             <h3 class="mb-3 fw-bolder text-center text-white">{{ seller.dota2_username }}</h3>
+            {% if has_bought %}
+                <p class="text-center text-white mb-2">Steam ID: <span class="text-cyan fw-bold">{{ seller.steam_id or 'Not Set' }}</span>
+                    {% if seller.steam_id %}
+                    <i class="fas fa-copy ms-1" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color=''" onclick="navigator.clipboard.writeText('{{ seller.steam_id }}'); this.className='fas fa-check text-success ms-1'; setTimeout(() => this.className='fas fa-copy ms-1', 2000);" title="Copy Steam ID"></i>
+                    {% endif %}
+                </p>
+            {% endif %}
             <div class="text-center">
                 <div class="text-gold mb-3" style="font-size: 1.2rem; color: var(--accent-gold);">
                     {% set avg = seller.average_rating() %}

@@ -23,16 +23,23 @@
                             <td class="py-3 px-4 border-bottom border-secondary">#{{ delivery.id }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary">{{ delivery.order_date.strftime('%b %d, %Y') }}</td>
                             <td class="py-3 px-4 border-bottom border-secondary">
-                                <div class="d-flex align-items-center gap-2">
-                                    {% if delivery.buyer.get_profile_image_url() %}
-                                        <img src="{{ delivery.buyer.get_profile_image_url() }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle d-flex justify-content-center align-items-center" style="width: 30px; height: 30px; background-color: var(--bg-main); color: var(--accent-cyan); font-weight: bold; font-size: 0.8rem; border: 1px solid var(--accent-cyan);">
-                                            {{ delivery.buyer.dota2_username[0]|upper if delivery.buyer.dota2_username else "U" }}
-                                        </div>
-                                    {% endif %}
-                                    <span class="text-white fw-bold">{{ delivery.buyer.dota2_username }}</span>
-                                    <a href="{{ url_for('main.chat', user_id=delivery.buyer.id) }}" class="btn btn-sm btn-outline-info ms-2" title="Message Buyer"><i class="fas fa-comment-dots"></i></a>
+                                <div class="d-flex flex-column">
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if delivery.buyer.get_profile_image_url() %}
+                                            <img src="{{ delivery.buyer.get_profile_image_url() }}" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle d-flex justify-content-center align-items-center" style="width: 30px; height: 30px; background-color: var(--bg-main); color: var(--accent-cyan); font-weight: bold; font-size: 0.8rem; border: 1px solid var(--accent-cyan);">
+                                                {{ delivery.buyer.dota2_username[0]|upper if delivery.buyer.dota2_username else "U" }}
+                                            </div>
+                                        {% endif %}
+                                        <span class="text-white fw-bold">{{ delivery.buyer.dota2_username }}</span>
+                                        <a href="{{ url_for('main.chat', user_id=delivery.buyer.id) }}" class="btn btn-sm btn-outline-info ms-2" title="Message Buyer"><i class="fas fa-comment-dots"></i></a>
+                                    </div>
+                                    <div class="text-muted small mt-1">Steam ID: <span class="text-cyan">{{ delivery.buyer.steam_id or 'Not Set' }}</span>
+                                        {% if delivery.buyer.steam_id %}
+                                        <i class="fas fa-copy ms-1" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color=''" onclick="navigator.clipboard.writeText('{{ delivery.buyer.steam_id }}'); this.className='fas fa-check text-success ms-1'; setTimeout(() => this.className='fas fa-copy ms-1', 2000);" title="Copy Steam ID"></i>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                             <td class="py-3 px-4 border-bottom border-secondary">
